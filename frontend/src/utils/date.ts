@@ -64,3 +64,23 @@ export function fromKey(k: string): Date {
   const [y, m, d] = k.split('-').map(Number);
   return new Date(y, m - 1, d);
 }
+
+// ───────────── 정산 주기 (수입일 ~ 다음 수입일 전날) ─────────────
+
+/** 오늘이 속한 정산 주기의 시작일(최근 수입일) */
+export function cycleStart(today: Date, payday: number): Date {
+  const clamp = (y: number, m: number) => new Date(y, m, Math.min(payday, new Date(y, m + 1, 0).getDate()));
+  const thisMonth = clamp(today.getFullYear(), today.getMonth());
+  return today >= thisMonth ? thisMonth : clamp(today.getFullYear(), today.getMonth() - 1);
+}
+
+/** 다음 수입일 */
+export function nextPayday(today: Date, payday: number): Date {
+  const s = cycleStart(today, payday);
+  return new Date(s.getFullYear(), s.getMonth() + 1, Math.min(payday, new Date(s.getFullYear(), s.getMonth() + 2, 0).getDate()));
+}
+
+/** 정산 주기의 마지막 날(다음 수입일 전날) */
+export function cycleEnd(today: Date, payday: number): Date {
+  return addDays(nextPayday(today, payday), -1);
+}

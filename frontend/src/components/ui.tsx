@@ -1,6 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { ComponentProps, ReactNode } from 'react';
 import {
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -162,7 +163,117 @@ export function Segment<K extends string>({
   );
 }
 
+/** 하단 시트 모달 */
+export function Sheet({
+  visible,
+  onClose,
+  title,
+  subtitle,
+  children,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  subtitle?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={styles.dim} onPress={onClose}>
+        <Pressable style={styles.sheet} onPress={() => {}}>
+          <View style={styles.sheetHead}>
+            <T size={19} weight="700" style={{ flex: 1 }}>
+              {title}
+            </T>
+            <Pressable onPress={onClose} hitSlop={10}>
+              <Ionicons name="close" size={24} color={colors.textMuted} />
+            </Pressable>
+          </View>
+          {subtitle && (
+            <T size={13} color={colors.textMuted} style={{ marginTop: 4 }}>
+              {subtitle}
+            </T>
+          )}
+          <View style={{ marginTop: 18 }}>{children}</View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+/** 가운데 확인 모달 */
+export function ConfirmModal({
+  visible,
+  title,
+  message,
+  confirmLabel = '확인',
+  cancelLabel = '취소',
+  onConfirm,
+  onCancel,
+}: {
+  visible: boolean;
+  title: string;
+  message: ReactNode;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
+      <View style={[styles.dim, { justifyContent: 'center', padding: 28 }]}>
+        <View style={styles.dialog}>
+          <T size={18} weight="700">
+            {title}
+          </T>
+          <View style={{ marginTop: 10 }}>
+            {typeof message === 'string' ? (
+              <T size={14} color={colors.textSub} style={{ lineHeight: 21 }}>
+                {message}
+              </T>
+            ) : (
+              message
+            )}
+          </View>
+          <View style={{ flexDirection: 'row', gap: 8, marginTop: 22 }}>
+            <Button label={cancelLabel} variant="soft" style={{ flex: 1, height: 48 }} onPress={onCancel} />
+            <Button label={confirmLabel} style={{ flex: 1, height: 48 }} onPress={onConfirm} />
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+export function Chip({ label, on, onPress }: { label: string; on?: boolean; onPress?: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={[styles.chip, on && styles.chipOn]}>
+      <T size={13} weight="600" color={on ? '#fff' : colors.textSub}>
+        {label}
+      </T>
+    </Pressable>
+  );
+}
+
+export function Row({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+  return <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 12 }, style]}>{children}</View>;
+}
+
 export const styles = StyleSheet.create({
+  dim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end', alignItems: 'center' },
+  sheet: {
+    width: '100%',
+    maxWidth: 440,
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 22,
+    paddingBottom: 34,
+  },
+  sheetHead: { flexDirection: 'row', alignItems: 'center' },
+  dialog: { width: '100%', maxWidth: 360, backgroundColor: '#fff', borderRadius: 22, padding: 22, alignSelf: 'center' },
+  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.bg },
+  chipOn: { backgroundColor: colors.text },
   screen: { padding: 16, paddingBottom: 48, gap: 12 },
   card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: 20 },
   pressed: { opacity: 0.75, transform: [{ scale: 0.99 }] },

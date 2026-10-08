@@ -12,7 +12,10 @@ export type CategoryId =
   | 'living'
   | 'etc'
   | 'fixed'
-  | 'income';
+  | 'income'
+  | 'transfer'
+  | 'self'
+  | 'pending';
 
 export type Category = { id: CategoryId; name: string; color: string; icon: IconName };
 
@@ -29,7 +32,10 @@ export const SPEND_CATEGORIES: Category[] = [
 
 const EXTRA: Category[] = [
   { id: 'fixed', name: '고정지출', color: '#667085', icon: 'repeat' },
-  { id: 'income', name: '수입', color: '#12B76A', icon: 'arrow-down' },
+  { id: 'income', name: '수입', color: '#2E90FA', icon: 'arrow-down' },
+  { id: 'transfer', name: '송금', color: '#F04438', icon: 'paper-plane' },
+  { id: 'self', name: '내 계좌 이동', color: '#667085', icon: 'swap-horizontal' },
+  { id: 'pending', name: '확인 필요', color: '#F79009', icon: 'help' },
 ];
 
 const ALL = [...SPEND_CATEGORIES, ...EXTRA];

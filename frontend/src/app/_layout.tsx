@@ -1,10 +1,9 @@
-import { Tabs } from 'expo-router';
+import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
-import { AppHeader } from '@/components/AppHeader';
 import { AppStoreProvider } from '@/store/AppStore';
 import { colors } from '@/theme';
 
@@ -32,15 +31,8 @@ export default function RootLayout() {
         <View style={styles.outer}>
           <SafeAreaView style={styles.phone} edges={['top']}>
             <StatusBar style="dark" />
-            <AppHeader />
-            <View style={{ flex: 1 }}>
-              {/* 탭 이동은 상단 AppHeader 네비바가 담당 — 기본 탭바는 숨김 */}
-              <Tabs
-                tabBar={() => null}
-                backBehavior="history"
-                screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.bg } }}
-              />
-            </View>
+            {/* (tabs): 상단 네비 4탭 / 그 외: 뒤로가기 헤더를 가진 상세 화면 / onboarding: 최초 설정 */}
+            <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }} />
           </SafeAreaView>
         </View>
       </AppStoreProvider>
@@ -55,6 +47,7 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 440,
     backgroundColor: '#fff',
+    overflow: 'hidden',
     ...(Platform.OS === 'web' ? ({ boxShadow: '0 0 24px rgba(16,24,40,0.08)' } as object) : {}),
   },
 });

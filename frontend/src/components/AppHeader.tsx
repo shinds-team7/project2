@@ -3,6 +3,7 @@ import { router, usePathname } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { colors } from '@/theme';
+import { useStore } from '@/store/AppStore';
 import { T } from './ui';
 
 export function Logo({ size = 30 }: { size?: number }) {
@@ -22,6 +23,7 @@ const TABS = [
 
 export function AppHeader() {
   const pathname = usePathname();
+  const pendingCount = useStore().summary.pendingTx.length;
   return (
     <View style={styles.wrap}>
       <View style={styles.top}>
@@ -34,9 +36,10 @@ export function AppHeader() {
             flex-able
           </T>
         </Pressable>
-        <View style={styles.actions}>
+        <Pressable style={styles.actions} onPress={() => router.push('/notifications')} hitSlop={8}>
           <Ionicons name="notifications-outline" size={22} color={colors.textSub} />
-        </View>
+          {pendingCount > 0 && <View style={styles.dot} />}
+        </Pressable>
       </View>
       <View style={styles.nav}>
         {TABS.map((t) => {
@@ -60,6 +63,7 @@ const styles = StyleSheet.create({
   top: { height: 56, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   actions: { flexDirection: 'row', gap: 14 },
+  dot: { position: 'absolute', top: 0, right: 0, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger, borderWidth: 1.5, borderColor: '#fff' },
   logo: { backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
   nav: { flexDirection: 'row', paddingHorizontal: 8 },
   tab: { flex: 1, alignItems: 'center', paddingTop: 6 },

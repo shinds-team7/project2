@@ -10,7 +10,8 @@ import { Card, IconCircle, Screen, SectionTitle, Segment, T } from '@/components
 import { SPEND_CATEGORIES } from '@/data/categories';
 import { useStore } from '@/store/AppStore';
 import { colors } from '@/theme';
-import { addDays, endOfMonth, endOfWeek, md, startOfMonth, startOfWeek, toKey } from '@/utils/date';
+import { isSpend } from '@/store/budget';
+import { addDays, cycleStart, diffDays, endOfWeek, md, startOfWeek, toKey } from '@/utils/date';
 import { won } from '@/utils/format';
 
 type Period = 'week' | 'month';
@@ -22,29 +23,29 @@ export default function Analysis() {
     if (params.period === 'week' || params.period === 'month') setPeriod(params.period);
   }, [params.period]);
 
-  const { today, transactions, monthlyBudget } = useStore();
+  const { today, transactions, summary, income } = useStore();
 
   const data = useMemo(() => {
     const todayKey = toKey(today);
-    const daysInMonth = endOfMonth(today).getDate();
+    const cycleDays = diffDays(summary.cycleEnd, summary.cycleStart) + 1;
     let from: Date, prevFrom: Date, prevTo: Date, budget: number, label: string;
 
     if (period === 'week') {
       from = startOfWeek(today);
       prevFrom = addDays(from, -7);
       prevTo = addDays(today, -7);
-      budget = Math.round((monthlyBudget * 7) / daysInMonth / 100) * 100;
+      budget = Math.round((summary.cycleBudget * 7) / cycleDays / 100) * 100;
       label = `${md(from)} ~ ${md(endOfWeek(today))}`;
     } else {
-      from = startOfMonth(today);
-      prevFrom = new Date(from.getFullYear(), from.getMonth() - 1, 1);
-      prevTo = new Date(from.getFullYear(), from.getMonth() - 1, Math.min(today.getDate(), endOfMonth(prevFrom).getDate()));
-      budget = monthlyBudget;
-      label = `${today.getMonth() + 1}월 1일 ~ ${today.getMonth() + 1}월 ${today.getDate()}일`;
+      from = summary.cycleStart;
+      prevFrom = cycleStart(addDays(from, -1), income.payday);
+      prevTo = addDays(prevFrom, diffDays(today, from));
+      budget = summary.cycleBudget;
+      label = `${md(from)} ~ ${md(today)} · 정산 주기 ${diffDays(today, from) + 1}일째`;
     }
 
     const inRange = (a: Date, b: Date) =>
-      transactions.filter((t) => t.amount < 0 && t.category !== 'fixed' && t.date >= toKey(a) && t.date <= toKey(b));
+      transactions.filter((t) => isSpend(t) && t.category !== 'transfer' && t.date >= toKey(a) && t.date <= toKey(b));
     const cur = inRange(from, today).filter((t) => t.date <= todayKey);
     const prev = inRange(prevFrom, prevTo);
 
@@ -65,15 +66,15 @@ export default function Analysis() {
       .sort((a, b) => b.diff - a.diff)[0];
 
     // 이번 달 남은 기간 동안 현재 속도로 쓰면?
-    const elapsed = period === 'month' ? today.getDate() : 0;
-    const projected = period === 'month' ? Math.round((spent / elapsed) * daysInMonth) : 0;
+    const elapsed = period === 'month' ? diffDays(today, from) + 1 : 0;
+    const projected = period === 'month' ? Math.round((spent / elapsed) * cycleDays) : 0;
 
     return { cats, spent, budget, prevSpent, rising, label, projected };
-  }, [period, today, transactions, monthlyBudget]);
+  }, [period, today, transactions, summary, income.payday]);
 
   const ratio = data.budget > 0 ? data.spent / data.budget : 0;
   const diff = data.spent - data.prevSpent;
-  const prevName = period === 'week' ? '지난주' : '지난달';
+  const prevName = period === 'week' ? '지난주' : '지난 주기';
 
   return (
     <Screen>
@@ -81,7 +82,7 @@ export default function Analysis() {
       <Segment
         items={[
           { key: 'week', label: '이번 주' },
-          { key: 'month', label: '이번 달' },
+          { key: 'month', label: '이번 정산 주기' },
         ]}
         value={period}
         onChange={setPeriod}
@@ -92,7 +93,7 @@ export default function Analysis() {
           {data.label}
         </T>
         <T size={20} weight="800" style={{ alignSelf: 'flex-start', marginTop: 4 }}>
-          {period === 'week' ? '이번 주' : `${today.getMonth() + 1}월`} 예산의{' '}
+          {period === 'week' ? '이번 주' : '이번 주기'} 생활비의{' '}
           <T size={20} weight="800" color={ratio > 1 ? colors.danger : colors.brand}>
             {Math.round(ratio * 100)}%
           </T>
@@ -161,8 +162,8 @@ export default function Analysis() {
             icon="calendar"
             text={
               data.projected > data.budget
-                ? `지금 속도라면 월말에 예산을 ${won(data.projected - data.budget)}원 초과해요.`
-                : `지금 속도라면 월말에 ${won(data.budget - data.projected)}원이 남아요.`
+                ? `지금 속도라면 다음 수입일 전에 생활비가 ${won(data.projected - data.budget)}원 모자라요.`
+                : `지금 속도라면 다음 수입일까지 ${won(data.budget - data.projected)}원이 남아요.`
             }
             warn={data.projected > data.budget}
           />

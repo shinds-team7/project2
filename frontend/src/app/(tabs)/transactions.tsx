@@ -1,10 +1,11 @@
 /** 4. 거래내역 — 연결된 계좌의 거래내역을 시간순(최신순)으로 */
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { AnalysisTabs } from '@/components/AnalysisTabs';
-import { Card, IconCircle, Screen, T } from '@/components/ui';
+import { Badge, Card, IconCircle, Screen, T } from '@/components/ui';
 import { getCategory } from '@/data/categories';
 import type { Transaction } from '@/data/mock';
 import { useStore } from '@/store/AppStore';
@@ -76,7 +77,7 @@ export default function Transactions() {
         <View style={styles.accounts}>
           <Ionicons name="link" size={14} color={colors.brandDark} />
           <T size={12} color={colors.textSub}>
-            신한은행 · 신한카드 2개 계좌 연결됨 · 방금 동기화
+            신한은행 · 신한카드 3곳 연결됨 · 08:30 동기화
           </T>
         </View>
       </Card>
@@ -120,22 +121,26 @@ export default function Transactions() {
               {list.map((t) => {
                 const c = getCategory(t.category);
                 const income = t.amount > 0;
+                const pending = t.status === 'pending';
                 return (
-                  <View key={t.id} style={styles.tx}>
+                  <Pressable key={t.id} style={styles.tx} disabled={!pending} onPress={() => router.push('/review')}>
                     <IconCircle name={c.icon} color={c.color} size={40} />
                     <View style={{ flex: 1, gap: 2 }}>
-                      <T size={15} weight="600">
-                        {t.merchant}
-                      </T>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <T size={15} weight="600" numberOfLines={1} style={{ flexShrink: 1 }}>
+                          {t.merchant}
+                        </T>
+                        {pending && <Badge label="확인 필요" color={colors.warn} bg={colors.warnSoft} />}
+                      </View>
                       <T size={12} color={colors.textMuted} numberOfLines={1}>
-                        {t.time} · {c.name} · {t.account}
+                        {t.time} · {c.name}{t.memo ? `(${t.memo})` : ''} · {t.account}
                       </T>
                     </View>
                     <T size={15} weight="700" color={income ? colors.info : colors.text}>
                       {income ? '+' : ''}
                       {won(t.amount)}원
                     </T>
-                  </View>
+                  </Pressable>
                 );
               })}
             </View>

@@ -1,27 +1,62 @@
 /**
- * 앱 전역 상태 (Mock, 메모리 저장).
+ * 앱 전역 상태 (Mock, 메모리 저장 — 새로고침하면 초기화).
  * 백엔드 연동 시 각 액션을 API 호출로 교체하면 된다.
- *   - scheduled  → GET/POST /api/schedules
- *   - plans      → GET/POST /api/large-expenses
- *   - transactions → GET /api/transactions (오픈뱅킹 연동 결과)
+ *   - transactions → GET /api/transactions (오픈뱅킹 연동), PATCH /api/transactions/:id (확인)
+ *   - scheduled    → /api/schedules (예정 지출)
+ *   - plans        → /api/large-expenses (고액 지출 계획)
+ *   - memory       → AI 서버 /ai/memory
  */
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { Platform } from 'react-native';
 
-import { buildTransactions, DEFAULT_MONTHLY_BUDGET, type Transaction } from '@/data/mock';
+import { DEFAULT_INSIGHTS, DEFAULT_MEMORY, type Insight, type MemoryItem } from '@/ai/memory';
+import type { CategoryId } from '@/data/categories';
+import {
+  buildTransactions,
+  DEFAULT_FIXED,
+  DEFAULT_INCOME,
+  DEFAULT_PROTECTED,
+  OPENING_BALANCE,
+  type FixedExpense,
+  type Protected,
+  type Transaction,
+} from '@/data/mock';
 import { addDays, diffDays, endOfWeek, startOfDay, startOfWeek, toKey } from '@/utils/date';
 import { computeBudget, type BudgetInput, type BudgetSummary, type LargePlan, type ScheduledSpend } from './budget';
 
+type Income = { amount: number; payday: number };
+
 type Store = {
   today: Date;
+  onboarded: boolean;
+  completeOnboarding: () => void;
+  restartOnboarding: () => void;
+
+  income: Income;
+  setIncome: (i: Income) => void;
+  fixed: FixedExpense[];
+  setFixed: (f: FixedExpense[]) => void;
+  protectedList: Protected[];
+  setProtected: (p: Protected[]) => void;
+
   transactions: Transaction[];
-  monthlyBudget: number;
-  setMonthlyBudget: (n: number) => void;
+  confirmTx: (id: string, patch: { category: CategoryId; memo?: string }) => void;
+
   scheduled: ScheduledSpend[];
-  addScheduled: (s: Omit<ScheduledSpend, 'id'>) => void;
+  addScheduled: (s: Omit<ScheduledSpend, 'id' | 'status'>) => string;
+  updateScheduled: (id: string, patch: Partial<ScheduledSpend>) => void;
   removeScheduled: (id: string) => void;
+  settleScheduled: (id: string, actual: number) => { memoryLabel?: string; before?: number; after?: number };
+
   plans: LargePlan[];
   addPlan: (p: Omit<LargePlan, 'id'>) => void;
   removePlan: (id: string) => void;
+
+  memory: MemoryItem[];
+  updateMemory: (id: string, amount: number) => void;
+  insights: Insight[];
+  removeInsight: (id: string) => void;
+
   budgetInput: BudgetInput;
   summary: BudgetSummary;
 };
@@ -31,47 +66,150 @@ const Ctx = createContext<Store | null>(null);
 let seq = 100;
 const nextId = (p: string) => `${p}-${++seq}`;
 
+const ONBOARD_KEY = 'flexable:onboarded';
+function readOnboarded(): boolean {
+  if (Platform.OS !== 'web') return false;
+  try {
+    return globalThis.localStorage?.getItem(ONBOARD_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function writeOnboarded(v: boolean) {
+  if (Platform.OS !== 'web') return;
+  try {
+    if (v) globalThis.localStorage?.setItem(ONBOARD_KEY, '1');
+    else globalThis.localStorage?.removeItem(ONBOARD_KEY);
+  } catch {
+    /* 저장 불가 환경은 무시 */
+  }
+}
+
 function initialScheduled(today: Date): ScheduledSpend[] {
   const weekEnd = endOfWeek(today);
   const left = diffDays(weekEnd, today);
-  const d1 = addDays(today, Math.min(1, left));
-  const d2 = weekEnd;
+  const k = (d: Date) => toKey(d);
   return [
-    { id: 's1', title: '동기 생일 저녁 모임', date: toKey(d1), amount: 35000 },
-    { id: 's2', title: '주말 영화 + 팝콘', date: toKey(d2), amount: 24000 },
+    {
+      id: 's0',
+      title: '동기 생일 선물',
+      date: k(addDays(today, -1)),
+      amount: 30000,
+      items: [{ label: '생일·선물', amount: 30000, basis: '최근 6개월 생일·선물 3회 평균', memoryId: 'm6' }],
+      source: 'ai',
+      status: 'planned',
+    },
+    {
+      id: 's1',
+      title: '스터디 (카페)',
+      date: k(today),
+      amount: 6200,
+      items: [{ label: '카페', amount: 6200, basis: '최근 6개월 카페 37회 평균', memoryId: 'm4' }],
+      source: 'calendar',
+      status: 'planned',
+    },
+    {
+      id: 's2',
+      title: '동기 저녁 모임',
+      date: k(addDays(today, Math.min(1, left))),
+      amount: 18500,
+      items: [{ label: '저녁 외식', amount: 18500, basis: '최근 6개월 저녁 외식 14회 평균', memoryId: 'm2' }],
+      source: 'ai',
+      status: 'planned',
+    },
+    {
+      id: 's3',
+      title: '주말 영화',
+      date: k(weekEnd),
+      amount: 15000,
+      items: [{ label: '영화', amount: 15000, basis: '최근 6개월 영화 4회 평균', memoryId: 'm5' }],
+      source: 'ai',
+      status: 'planned',
+    },
   ];
-}
-
-function initialPlans(today: Date): LargePlan[] {
-  return [{ id: 'p1', title: '연말 콘서트 티켓', amount: 165000, weekStart: toKey(addDays(startOfWeek(today), 7 * 6)) }];
 }
 
 export function AppStoreProvider({ children }: { children: ReactNode }) {
   const [today] = useState(() => startOfDay(new Date()));
-  const [transactions] = useState(() => buildTransactions(today));
-  const [monthlyBudget, setMonthlyBudget] = useState(DEFAULT_MONTHLY_BUDGET);
+  const [onboarded, setOnboarded] = useState(readOnboarded);
+  const [income, setIncome] = useState<Income>({ amount: DEFAULT_INCOME.amount, payday: DEFAULT_INCOME.payday });
+  const [fixed, setFixed] = useState<FixedExpense[]>(DEFAULT_FIXED);
+  const [protectedList, setProtected] = useState<Protected[]>(DEFAULT_PROTECTED);
+  const [transactions, setTransactions] = useState(() =>
+    buildTransactions(today, DEFAULT_INCOME.payday, DEFAULT_INCOME.amount, DEFAULT_FIXED),
+  );
   const [scheduled, setScheduled] = useState<ScheduledSpend[]>(() => initialScheduled(today));
-  const [plans, setPlans] = useState<LargePlan[]>(() => initialPlans(today));
+  const [plans, setPlans] = useState<LargePlan[]>(() => [
+    { id: 'p1', title: '연말 콘서트 티켓', amount: 165000, weekStart: toKey(addDays(startOfWeek(today), 7 * 6)) },
+  ]);
+  const [memory, setMemory] = useState<MemoryItem[]>(DEFAULT_MEMORY);
+  const [insights, setInsights] = useState<Insight[]>(DEFAULT_INSIGHTS);
 
   const value = useMemo<Store>(() => {
-    const budgetInput: BudgetInput = { today, monthlyBudget, transactions, scheduled, plans };
-    return {
+    const budgetInput: BudgetInput = {
       today,
       transactions,
-      monthlyBudget,
-      setMonthlyBudget,
       scheduled,
-      addScheduled: (s) =>
-        setScheduled((prev) => [...prev, { ...s, id: nextId('s') }].sort((a, b) => (a.date < b.date ? -1 : 1))),
-      removeScheduled: (id) => setScheduled((prev) => prev.filter((s) => s.id !== id)),
       plans,
-      addPlan: (p) =>
-        setPlans((prev) => [...prev, { ...p, id: nextId('p') }].sort((a, b) => (a.weekStart < b.weekStart ? -1 : 1))),
+      income,
+      fixed,
+      protectedList,
+      openingBalance: OPENING_BALANCE,
+    };
+    const sortByDate = (a: ScheduledSpend, b: ScheduledSpend) => (a.date < b.date ? -1 : 1);
+
+    return {
+      today,
+      onboarded,
+      completeOnboarding: () => {
+        writeOnboarded(true);
+        setOnboarded(true);
+      },
+      restartOnboarding: () => {
+        writeOnboarded(false);
+        setOnboarded(false);
+      },
+      income,
+      setIncome,
+      fixed,
+      setFixed,
+      protectedList,
+      setProtected,
+      transactions,
+      confirmTx: (id, patch) =>
+        setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch, status: 'confirmed' } : t))),
+      scheduled,
+      addScheduled: (s) => {
+        const id = nextId('s');
+        setScheduled((prev) => [...prev, { ...s, id, status: 'planned' as const }].sort(sortByDate));
+        return id;
+      },
+      updateScheduled: (id, patch) =>
+        setScheduled((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)).sort(sortByDate)),
+      removeScheduled: (id) => setScheduled((prev) => prev.filter((s) => s.id !== id)),
+      settleScheduled: (id, actual) => {
+        const target = scheduled.find((s) => s.id === id);
+        setScheduled((prev) => prev.map((s) => (s.id === id ? { ...s, status: 'settled', actual } : s)));
+        // 단일 항목 일정이면 AI 메모리 평균을 실제 금액으로 갱신 (학습)
+        const memId = target?.items?.length === 1 ? target.items[0].memoryId : undefined;
+        const mem = memory.find((m) => m.id === memId);
+        if (!mem) return {};
+        const after = Math.round((mem.amount * mem.count + actual) / (mem.count + 1) / 100) * 100;
+        setMemory((prev) => prev.map((m) => (m.id === mem.id ? { ...m, amount: after, count: m.count + 1 } : m)));
+        return { memoryLabel: mem.label, before: mem.amount, after };
+      },
+      plans,
+      addPlan: (p) => setPlans((prev) => [...prev, { ...p, id: nextId('p') }].sort((a, b) => (a.weekStart < b.weekStart ? -1 : 1))),
       removePlan: (id) => setPlans((prev) => prev.filter((p) => p.id !== id)),
+      memory,
+      updateMemory: (id, amount) =>
+        setMemory((prev) => prev.map((m) => (m.id === id ? { ...m, amount, editedByUser: true } : m))),
+      insights,
+      removeInsight: (id) => setInsights((prev) => prev.filter((i) => i.id !== id)),
       budgetInput,
       summary: computeBudget(budgetInput),
     };
-  }, [today, transactions, monthlyBudget, scheduled, plans]);
+  }, [today, onboarded, income, fixed, protectedList, transactions, scheduled, plans, memory, insights]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

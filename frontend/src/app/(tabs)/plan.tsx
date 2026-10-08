@@ -1,6 +1,6 @@
 /** 2. 지출계획 — 고액 지출 금액 입력 → AI 추천 결제 주 + 1주 단위 조정 → 홈 예산에 반영 */
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
@@ -21,8 +21,14 @@ const QUICK = [
 
 export default function Plan() {
   const { today, budgetInput, scheduled, plans, addPlan } = useStore();
-  const [title, setTitle] = useState('');
-  const [raw, setRaw] = useState('');
+  const params = useLocalSearchParams<{ amount?: string; title?: string }>();
+  const [title, setTitle] = useState(params.title ?? '');
+  const [raw, setRaw] = useState(params.amount && params.amount !== '0' ? params.amount : '');
+  // 예정 지출 등록 화면에서 "큰 지출"로 넘어온 경우 값 채우기
+  useEffect(() => {
+    if (params.title) setTitle(params.title);
+    if (params.amount && params.amount !== '0') setRaw(params.amount);
+  }, [params.title, params.amount]);
   const amount = Number(raw.replace(/[^0-9]/g, '')) || 0;
 
   // 금액 입력이 멈추면 AI 분석 → 캘린더 노출 (Mock 지연)
