@@ -10,7 +10,7 @@ import { evaluateWeek, recommendWeek, STATUS_META } from '@/store/budget';
 import { useStore } from '@/store/AppStore';
 import { noOutline, colors, font } from '@/theme';
 import { addDays, diffDays, endOfWeek, isSameDay, md, startOfWeek, toKey, weekLabel } from '@/utils/date';
-import { won } from '@/utils/format';
+import { manwon, won } from '@/utils/format';
 
 const QUICK = [
   { v: 100000, label: '+10만' },
@@ -22,13 +22,13 @@ const QUICK = [
 export default function Plan() {
   const { today, budgetInput, scheduled, plans, addPlan } = useStore();
   const params = useLocalSearchParams<{ amount?: string; title?: string }>();
-  const [title, setTitle] = useState(params.title ?? '');
+  // 지출계획 화면에선 무엇을 위한 지출인지 받지 않는다 (예정 지출 등록에서 넘어온 경우만 이름 유지)
+  const title = params.title ?? '';
   const [raw, setRaw] = useState(params.amount && params.amount !== '0' ? params.amount : '');
   // 예정 지출 등록 화면에서 "큰 지출"로 넘어온 경우 값 채우기
   useEffect(() => {
-    if (params.title) setTitle(params.title);
     if (params.amount && params.amount !== '0') setRaw(params.amount);
-  }, [params.title, params.amount]);
+  }, [params.amount]);
   const amount = Number(raw.replace(/[^0-9]/g, '')) || 0;
 
   // 금액 입력이 멈추면 AI 분석 → 캘린더 노출 (Mock 지연)
@@ -68,8 +68,7 @@ export default function Plan() {
 
   const confirm = () => {
     if (!analyzed) return;
-    addPlan({ title: title.trim() || '고액 지출', amount: analyzed, weekStart: toKey(selected) });
-    setTitle('');
+    addPlan({ title: title.trim() || `고액 지출 ${manwon(analyzed)}`, amount: analyzed, weekStart: toKey(selected) });
     setRaw('');
     router.navigate('/');
   };
@@ -115,13 +114,6 @@ export default function Plan() {
             </Pressable>
           )}
         </View>
-        <TextInput
-          value={title}
-          onChangeText={setTitle}
-          placeholder="무엇을 위한 지출인가요? (예: 노트북, 여행)"
-          placeholderTextColor={colors.textFaint}
-          style={[styles.titleInput, noOutline]}
-        />
       </Card>
 
       {loading && (
@@ -139,7 +131,8 @@ export default function Plan() {
             <WeekCalendar
               today={today}
               selectedWeek={selected}
-              recommendedWeek={recommended}
+              selectedStatus={result.status}
+              isRecommended={isRec}
               canPrev={canPrev}
               onPrev={() => canPrev && setSelected(addDays(selected, -7))}
               onNext={() => setSelected(addDays(selected, 7))}

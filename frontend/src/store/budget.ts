@@ -174,11 +174,12 @@ export type BudgetSummary = ReturnType<typeof computeBudget>;
 
 export type WeekStatus = 'relax' | 'fine' | 'tight' | 'danger';
 
-export const STATUS_META: Record<WeekStatus, { label: string; color: string; bg: string; msg: string }> = {
-  relax: { label: '여유', color: '#039855', bg: '#E8F8EF', msg: '일상 소비에 거의 영향이 없어요' },
-  fine: { label: '적당', color: '#0E9384', bg: '#E6F7F5', msg: '조금만 아끼면 무리 없이 결제할 수 있어요' },
-  tight: { label: '빠듯', color: '#DC6803', bg: '#FEF4E6', msg: '하루 예산이 꽤 줄어요. 외식·카페를 줄여야 해요' },
-  danger: { label: '위험', color: '#D92D20', bg: '#FEECEB', msg: '생활비가 부족해질 수 있어요. 일정을 미루는 걸 추천해요' },
+/** 추천 정도 색: 초록(여유) → 노랑(적당) → 주황(빠듯) → 빨강(위험) */
+export const STATUS_META: Record<WeekStatus, { label: string; color: string; bg: string; fill: string; msg: string }> = {
+  relax: { label: '여유', color: '#039855', bg: '#E8F8EF', fill: '#C6F1D9', msg: '일상 소비에 거의 영향이 없어요' },
+  fine: { label: '적당', color: '#B54708', bg: '#FEF7C3', fill: '#FDEFA4', msg: '조금만 아끼면 무리 없이 결제할 수 있어요' },
+  tight: { label: '빠듯', color: '#C4320A', bg: '#FFEAD5', fill: '#FDD3AE', msg: '하루 예산이 꽤 줄어요. 외식·카페를 줄여야 해요' },
+  danger: { label: '위험', color: '#D92D20', bg: '#FEECEB', fill: '#FECDCA', msg: '생활비가 부족해질 수 있어요. 일정을 미루는 걸 추천해요' },
 };
 
 export function evaluateWeek(base: BudgetInput, amount: number, weekStart: Date) {

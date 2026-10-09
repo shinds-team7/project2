@@ -52,16 +52,29 @@ export default function Income() {
       <T size={13} weight="600" color={colors.textSub} style={{ marginTop: 10 }}>
         수입일
       </T>
-      <View style={styles.dayRow}>
-        <Pressable style={styles.step} onPress={() => setDay(day <= 1 ? 31 : day - 1)}>
-          <Ionicons name="remove" size={20} color={colors.text} />
-        </Pressable>
-        <T size={22} weight="800" style={{ flex: 1, textAlign: 'center' }}>
+      <View style={styles.cal}>
+        <T size={15} weight="800" style={{ textAlign: 'center', marginBottom: 10 }}>
           매월 {day}일
         </T>
-        <Pressable style={styles.step} onPress={() => setDay(day >= 31 ? 1 : day + 1)}>
-          <Ionicons name="add" size={20} color={colors.text} />
-        </Pressable>
+        <View style={styles.grid}>
+          {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => {
+            const on = d === day;
+            return (
+              <View key={d} style={styles.cell}>
+                <Pressable onPress={() => setDay(d)} style={[styles.dayBtn, on && styles.dayOn]}>
+                  <T size={15} weight={on ? '800' : '500'} color={on ? '#fff' : colors.text}>
+                    {d}
+                  </T>
+                </Pressable>
+              </View>
+            );
+          })}
+        </View>
+        {day >= 29 && (
+          <T size={12} color={colors.textMuted} style={{ textAlign: 'center', marginTop: 8 }}>
+            {day}일이 없는 달은 그 달 마지막 날을 수입일로 계산해요
+          </T>
+        )}
       </View>
       <T size={12} color={colors.textMuted}>
         부수입·용돈 같은 추가 수입은 이후 버전에서 지원할 예정이에요
@@ -74,6 +87,9 @@ const styles = StyleSheet.create({
   ai: { flexDirection: 'row', gap: 6, backgroundColor: colors.brandSofter, borderRadius: 14, padding: 14, marginBottom: 10 },
   amountBox: { flexDirection: 'row', alignItems: 'center', borderBottomWidth: 2, borderBottomColor: colors.brand, paddingBottom: 6, gap: 6 },
   amount: { flex: 1, fontSize: 30, fontWeight: '800', color: colors.text, fontFamily: font, minWidth: 0 },
-  dayRow: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bg, borderRadius: 16, padding: 10 },
-  step: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  cal: { backgroundColor: colors.bg, borderRadius: 18, padding: 14 },
+  grid: { flexDirection: 'row', flexWrap: 'wrap' },
+  cell: { width: `${100 / 7}%`, alignItems: 'center', paddingVertical: 3 },
+  dayBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  dayOn: { backgroundColor: colors.brand },
 });
