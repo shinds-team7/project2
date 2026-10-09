@@ -11,7 +11,7 @@ import { useStore } from '@/store/AppStore';
 import { colors } from '@/theme';
 import { diffDays } from '@/utils/date';
 import { TodayHeroCard } from './HomeContent';
-import { TIER_NAME, TierBadge } from './TierBadge';
+import { TierBadge } from './TierBadge';
 import { T } from './ui';
 
 type Level = 1 | 2 | 3 | 4 | 5;
@@ -93,9 +93,6 @@ export function CharacterHero() {
       <View style={styles.badgeRow}>
         <TierBadge tier={level} />
         <View>
-          <T size={11} weight="700" color={colors.textMuted}>
-            {TIER_NAME[level]} 등급
-          </T>
           <T size={15} weight="800" color={L.accent}>
             {L.name}
           </T>
@@ -147,7 +144,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   heroSlot: { alignSelf: 'stretch', marginTop: 14 },
-  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 52 },
+  badgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   bubble: { marginTop: 12, backgroundColor: '#fff', borderRadius: 16, paddingHorizontal: 16, paddingVertical: 10, maxWidth: 360 },
   tail: {
     position: 'absolute',
