@@ -24,6 +24,7 @@ import { addDays, diffDays, endOfWeek, startOfDay, startOfWeek, toKey } from '@/
 import { computeBudget, type BudgetInput, type BudgetSummary, type LargePlan, type ScheduledSpend } from './budget';
 
 type Income = { amount: number; payday: number };
+export type HomeStyle = 'classic' | 'character';
 export type NotifySettings = { morning: boolean; hour: number; minute: number; payment: boolean; plan: boolean; weekly: boolean };
 
 type Store = {
@@ -44,6 +45,10 @@ type Store = {
   updateTx: (id: string, patch: Partial<Pick<Transaction, 'excluded' | 'splitN' | 'memo' | 'category'>>) => void;
   /** 새 결제 수신 (시연: /demo/pay) — 서버가 카드/오픈뱅킹 알림을 받아 넣어주는 부분 */
   addTransaction: (t: Omit<Transaction, 'id' | 'status'> & { id?: string }) => void;
+
+  /** 홈 화면 스타일 — 기본(/) 또는 캐릭터(/home2) */
+  homeStyle: HomeStyle;
+  setHomeStyle: (h: HomeStyle) => void;
 
   notify: NotifySettings;
   setNotify: (n: NotifySettings) => void;
@@ -73,6 +78,23 @@ let seq = 100;
 const nextId = (p: string) => `${p}-${++seq}`;
 
 const ONBOARD_KEY = 'flexable:onboarded';
+const HOME_KEY = 'flexable:homeStyle';
+function readHomeStyle(): HomeStyle {
+  if (Platform.OS !== 'web') return 'classic';
+  try {
+    return globalThis.localStorage?.getItem(HOME_KEY) === 'character' ? 'character' : 'classic';
+  } catch {
+    return 'classic';
+  }
+}
+function writeHomeStyle(v: HomeStyle) {
+  if (Platform.OS !== 'web') return;
+  try {
+    globalThis.localStorage?.setItem(HOME_KEY, v);
+  } catch {
+    /* 저장 불가 환경은 무시 */
+  }
+}
 function readOnboarded(): boolean {
   if (Platform.OS !== 'web') return false;
   try {
@@ -149,6 +171,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     { id: 'p1', title: '연말 콘서트 티켓', amount: 165000, weekStart: toKey(addDays(startOfWeek(today), 7 * 6)) },
   ]);
   const [memory, setMemory] = useState<MemoryItem[]>(DEFAULT_MEMORY);
+  const [homeStyle, setHomeStyleState] = useState<HomeStyle>(readHomeStyle);
   const [notify, setNotify] = useState<NotifySettings>({ morning: true, hour: 8, minute: 0, payment: true, plan: true, weekly: false });
   const [insights, setInsights] = useState<Insight[]>(DEFAULT_INSIGHTS);
 
@@ -190,6 +213,11 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
           if (prev.some((x) => x.id === id)) return prev; // 같은 결제 중복 수신 방지
           return [{ ...t, id, status: 'confirmed' as const }, ...prev];
         }),
+      homeStyle,
+      setHomeStyle: (h) => {
+        writeHomeStyle(h);
+        setHomeStyleState(h);
+      },
       notify,
       setNotify,
       scheduled,
@@ -223,7 +251,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       budgetInput,
       summary: computeBudget(budgetInput),
     };
-  }, [today, onboarded, income, fixed, protectedList, transactions, scheduled, plans, memory, insights, notify]);
+  }, [today, onboarded, income, fixed, protectedList, transactions, scheduled, plans, memory, insights, notify, homeStyle]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

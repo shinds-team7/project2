@@ -19,17 +19,18 @@ const TABS = [
   { href: '/', label: '홈', match: (p: string) => p === '/' || p.startsWith('/home2') },
   { href: '/plan', label: '지출계획', match: (p: string) => p.startsWith('/plan') },
   { href: '/analysis', label: '분석', match: (p: string) => p.startsWith('/analysis') || p.startsWith('/transactions') },
-  { href: '/my', label: '마이', match: (p: string) => p.startsWith('/my') },
+  { href: '/my', label: '마이페이지', match: (p: string) => p.startsWith('/my') },
 ] as const;
 
 export function AppHeader() {
   const pathname = usePathname();
-  const { scheduled, today } = useStore();
+  const { scheduled, today, homeStyle } = useStore();
+  const homeHref = homeStyle === 'character' ? '/home2' : '/';
   const pendingCount = scheduled.filter((x) => x.status === 'planned' && x.date < toKey(today)).length;
   return (
     <View style={styles.wrap}>
       <View style={styles.top}>
-        <Pressable style={styles.brand} onPress={() => router.navigate('/')}>
+        <Pressable style={styles.brand} onPress={() => router.navigate(homeHref)}>
           <Logo />
           <T size={18} weight="800">
             텅장관리
@@ -47,7 +48,7 @@ export function AppHeader() {
         {TABS.map((t) => {
           const on = t.match(pathname);
           return (
-            <Pressable key={t.href} style={styles.tab} onPress={() => router.navigate(t.href)}>
+            <Pressable key={t.href} style={styles.tab} onPress={() => router.navigate(t.href === '/' ? homeHref : t.href)}>
               <T size={15} weight={on ? '700' : '500'} color={on ? colors.text : colors.textMuted}>
                 {t.label}
               </T>

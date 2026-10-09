@@ -9,7 +9,7 @@ export type Tier = 1 | 2 | 3 | 4 | 5;
 
 /** 캐릭터 그림체와 맞춘 진한 펜 선 */
 const INK = '#1B1B1B';
-const HEIGHT = 34;
+const HEIGHT = 20;
 
 type Spec = {
   vb: [number, number]; // viewBox 크기

@@ -16,7 +16,9 @@ export default function TabsLayout() {
       <Tabs
         tabBar={() => null}
         backBehavior="history"
-        screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.bg } }}
+        // 하단 탭바를 쓰지 않으므로 하단 안전영역(아이폰 홈바) 여백도 만들지 않는다
+        safeAreaInsets={{ bottom: 0 }}
+        screenOptions={{ headerShown: false, tabBarStyle: { display: 'none' }, sceneStyle: { backgroundColor: colors.bg } }}
       />
     </View>
   );

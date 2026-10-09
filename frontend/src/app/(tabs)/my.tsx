@@ -4,7 +4,7 @@ import { router, type Href } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
 
-import { Button, Card, Chip, IconCircle, Screen, SectionTitle, Sheet, T } from '@/components/ui';
+import { Button, Card, Chip, IconCircle, Screen, SectionTitle, Segment, Sheet, T } from '@/components/ui';
 import { ACCOUNTS, USER } from '@/data/mock';
 import { useStore } from '@/store/AppStore';
 import { colors } from '@/theme';
@@ -12,7 +12,7 @@ import { md } from '@/utils/date';
 import { won } from '@/utils/format';
 
 export default function My() {
-  const { income, fixed, protectedList, summary, restartOnboarding, notify, setNotify } = useStore();
+  const { income, fixed, protectedList, summary, restartOnboarding, notify, setNotify, homeStyle, setHomeStyle } = useStore();
   const [timeOpen, setTimeOpen] = useState(false);
   const [hour, setHour] = useState(notify.hour);
   const [minute, setMinute] = useState(notify.minute);
@@ -89,6 +89,25 @@ export default function My() {
         <Menu label="고정지출" value={`${won(fixedTotal)}원`} sub={`${fixed.length}건 · 월세, 통신비, 구독 등`} href={{ pathname: '/onboarding/fixed', params: { edit: '1' } }} />
         <Menu label="보호 금액" value={`${won(protectedTotal)}원`} sub={protectedList.map((p) => p.name).join(', ')} href={{ pathname: '/onboarding/protect', params: { edit: '1' } }} />
         <Menu label="계산 근거 보기" sub={`오늘 하루 기준 ${won(summary.dailyLimit)}원`} href="/budget-detail" />
+      </Card>
+
+      {/* 홈 화면 스타일 (기본 ↔ 캐릭터) */}
+      <Card>
+        <SectionTitle title="홈 화면" />
+        <Segment
+          items={[
+            { key: 'classic', label: '기본 홈' },
+            { key: 'character', label: '캐릭터 홈' },
+          ]}
+          value={homeStyle}
+          onChange={(k) => {
+            setHomeStyle(k);
+            router.navigate(k === 'character' ? '/home2' : '/');
+          }}
+        />
+        <T size={12} color={colors.textMuted} style={{ marginTop: 10 }}>
+          상단 '홈' 탭을 누르면 선택한 화면으로 열려요
+        </T>
       </Card>
 
       {/* AI */}
