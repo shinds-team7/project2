@@ -35,6 +35,7 @@ export default function Demo() {
     { title: '회식비 1/N 나누기', desc: '역전할맥 96,000원 → 거래 상세 최하단 1/N', href: '/tx/nbbang', url: '/tx/nbbang' },
     { title: '대신 결제한 돈 반영 제외', desc: '다이소 27,500원 → 거래 상세 최하단 반영 제외', href: '/tx/proxy', url: '/tx/proxy' },
     { title: '지난 일정 정산', desc: '동기 생일 선물 → 실제 결제 연결', href: '/settle/s0', url: '/settle/s0' },
+    { title: '캐릭터 홈 (B안)', desc: '예산 관리 상태에 따라 Lv.1~5 캐릭터 · 좌우 화살표로 레벨 변경', href: '/home2', url: '/home2' },
   ];
 
   return (

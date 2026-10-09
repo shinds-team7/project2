@@ -16,7 +16,7 @@ export function Logo({ size = 30 }: { size?: number }) {
 }
 
 const TABS = [
-  { href: '/', label: '홈', match: (p: string) => p === '/' },
+  { href: '/', label: '홈', match: (p: string) => p === '/' || p.startsWith('/home2') },
   { href: '/plan', label: '지출계획', match: (p: string) => p.startsWith('/plan') },
   { href: '/analysis', label: '분석', match: (p: string) => p.startsWith('/analysis') || p.startsWith('/transactions') },
   { href: '/my', label: '마이', match: (p: string) => p.startsWith('/my') },
