@@ -93,7 +93,7 @@ export default function Analysis() {
           {data.label}
         </T>
         <T size={20} weight="800" style={{ alignSelf: 'flex-start', marginTop: 4 }}>
-          {period === 'week' ? '이번 주' : '이번 주기'} 생활비의{' '}
+          생활비의{' '}
           <T size={20} weight="800" color={ratio > 1 ? colors.danger : colors.brand}>
             {Math.round(ratio * 100)}%
           </T>

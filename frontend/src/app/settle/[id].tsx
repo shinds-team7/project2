@@ -128,7 +128,7 @@ export default function Settle() {
                     <T size={14} weight="600">
                       {t.merchant}
                     </T>
-                    <T size={12} color={colors.textMuted}>
+                    <T size={12} color={colors.textMuted} numberOfLines={1}>
                       {md(fromKey(t.date))} {t.time} · {t.account}
                     </T>
                   </View>

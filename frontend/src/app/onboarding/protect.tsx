@@ -76,6 +76,6 @@ const styles = StyleSheet.create({
   balance: { backgroundColor: colors.brandSofter, borderRadius: 18, padding: 18, marginBottom: 6 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: 16, backgroundColor: colors.bg },
   name: { flex: 1, fontSize: 15, fontWeight: '600', color: colors.text, fontFamily: font, minWidth: 0 },
-  amount: { width: 120, fontSize: 16, fontWeight: '700', textAlign: 'right', color: colors.text, fontFamily: font },
+  amount: { width: 100, fontSize: 16, fontWeight: '700', textAlign: 'right', color: colors.text, fontFamily: font },
   add: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4, height: 46, borderRadius: 14, borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.brandBorder },
 });

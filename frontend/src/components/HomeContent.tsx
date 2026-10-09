@@ -99,7 +99,7 @@ export function HomeContent({ top, hideHero }: { top?: ReactNode; hideHero?: boo
           <IconCircle name="receipt" color={colors.info} size={40} />
           <View style={{ flex: 1 }}>
             <T size={14} weight="700">
-              ‘{x.title}’ 얼마 썼는지 확인해 주세요
+              ‘{x.title}’ 얼마 썼나요?
             </T>
             <T size={12} color={colors.textMuted}>
               예상 {won(x.amount)}원 · 실제 결제와 연결하면 AI가 학습해요

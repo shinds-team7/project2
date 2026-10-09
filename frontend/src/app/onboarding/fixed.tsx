@@ -54,7 +54,7 @@ export default function Fixed() {
               {f.day}일
             </T>
           </View>
-          <T size={15} weight="600" style={{ flex: 1 }}>
+          <T size={15} weight="600" numberOfLines={1} style={{ flex: 1 }}>
             {f.name}
           </T>
           <T size={15} weight="700">
@@ -70,14 +70,14 @@ export default function Fixed() {
         </T>
         <TextInput value={name} onChangeText={setName} placeholder="항목 (예: 헬스장)" placeholderTextColor={colors.textFaint} style={[styles.input, noOutline]} />
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TextInput value={day} onChangeText={setDay} placeholder="납부일" keyboardType="number-pad" placeholderTextColor={colors.textFaint} style={[styles.input, noOutline, { width: 90 }]} />
+          <TextInput value={day} onChangeText={setDay} placeholder="납부일" keyboardType="number-pad" placeholderTextColor={colors.textFaint} style={[styles.input, noOutline, { width: 72 }]} />
           <TextInput
             value={raw ? won(Number(raw.replace(/[^0-9]/g, '')) || 0) : ''}
             onChangeText={setRaw}
             placeholder="금액"
             keyboardType="number-pad"
             placeholderTextColor={colors.textFaint}
-            style={[styles.input, noOutline, { flex: 1, textAlign: 'right' }]}
+            style={[styles.input, noOutline, { flex: 1, minWidth: 0, textAlign: 'right' }]}
           />
           <Pressable onPress={add} style={styles.plus}>
             <Ionicons name="add" size={22} color="#fff" />

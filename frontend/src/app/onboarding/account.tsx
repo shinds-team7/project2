@@ -38,7 +38,7 @@ export default function Account() {
                 <View style={[styles.bankIcon, { backgroundColor: b.startsWith('신한') ? '#0046FF' : '#D0D5DD' }]}>
                   <Ionicons name={b.includes('카드') ? 'card' : 'business'} size={16} color="#fff" />
                 </View>
-                <T size={14} weight={on ? '700' : '500'}>
+                <T size={13} weight={on ? '700' : '500'} numberOfLines={1} style={{ flexShrink: 1 }}>
                   {b}
                 </T>
                 {on && <Ionicons name="checkmark-circle" size={18} color={colors.brand} style={{ marginLeft: 'auto' }} />}
@@ -93,9 +93,9 @@ export default function Account() {
 
 const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  bank: { width: '48%', flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, borderRadius: 16, borderWidth: 1.5, borderColor: colors.line },
+  bank: { width: '48%', flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: 16, borderWidth: 1.5, borderColor: colors.line },
   bankOn: { borderColor: colors.brand, backgroundColor: colors.brandSofter },
-  bankIcon: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
+  bankIcon: { width: 28, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   loading: { alignItems: 'center', paddingVertical: 50 },
   acc: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, backgroundColor: colors.bg },
   safe: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },

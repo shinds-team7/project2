@@ -328,7 +328,7 @@ function ManualForm() {
           keyboardType="number-pad"
           placeholder="0"
           placeholderTextColor={colors.textFaint}
-          style={[styles.input, noOutline, { flex: 1, textAlign: 'right' }]}
+          style={[styles.input, noOutline, { flex: 1, minWidth: 0, textAlign: 'right' }]}
         />
         <T size={16} weight="600">
           원

@@ -31,7 +31,7 @@ export default function BudgetDetail() {
 
   return (
     <View style={{ flex: 1 }}>
-      <SubHeader title="오늘 금액은 이렇게 계산했어요" />
+      <SubHeader title="계산 근거" />
       <Screen>
         <Card style={{ backgroundColor: colors.brandSofter }}>
           <T size={13} color={colors.textSub}>
