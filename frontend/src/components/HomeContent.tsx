@@ -66,6 +66,8 @@ export function HomeContent({ top, hideHero }: { top?: ReactNode; hideHero?: boo
         </Card>
       </View>
 
+      <DowBudgetCard />
+
       {/* 이번 주 사용 가능한 금액 → 분석 */}
       <Card onPress={() => router.navigate({ pathname: '/analysis', params: { period: 'week' } })}>
         <View style={styles.rowBetween}>
@@ -184,6 +186,46 @@ export function HomeContent({ top, hideHero }: { top?: ReactNode; hideHero?: boo
   );
 }
 
+/** 요일별 하루 예산 — 소비 패턴 분석으로 요일마다 비중(%)을 다르게 배분한 결과 */
+export function DowBudgetCard() {
+  const { today, summary: s } = useStore();
+  const max = Math.max(1, ...s.dowPlan.map((d) => d.weight));
+  return (
+    <Card>
+      <SectionTitle title="요일별 하루 예산" right={<Badge label="소비 패턴 분석" color={colors.brandDark} bg={colors.brandSoft} />} />
+      <T size={12} color={colors.textMuted} style={{ marginBottom: 14, lineHeight: 18 }}>
+        남은 생활비 {won(Math.max(0, s.remainingNow + s.todaySpent))}원을 요일별 소비 비중으로 나눴어요. 많이 쓰는 요일엔 더, 덜 쓰는 요일엔 덜 배정해요.
+      </T>
+      <View style={{ gap: 10 }}>
+        {s.dowPlan.map((d) => {
+          const isToday = toKey(d.date) === toKey(today);
+          return (
+            <View key={toKey(d.date)} style={styles.dowRow}>
+              <T size={13} weight={isToday ? '800' : '600'} color={isToday ? colors.brandDark : colors.textSub} style={{ width: 22 }}>
+                {DOW[d.date.getDay()]}
+              </T>
+              <View style={styles.dowTrack}>
+                <View
+                  style={[styles.dowFill, { width: `${(d.weight / max) * 100}%`, backgroundColor: isToday ? colors.brand : colors.brandBorder }]}
+                />
+              </View>
+              <T size={12} color={colors.textMuted} style={{ width: 34, textAlign: 'right' }}>
+                {d.weight}%
+              </T>
+              <T size={13} weight={isToday ? '800' : '600'} style={{ width: 82, textAlign: 'right' }}>
+                {won(d.amount)}원
+              </T>
+            </View>
+          );
+        })}
+      </View>
+      <T size={11} color={colors.textMuted} style={{ marginTop: 12 }}>
+        오늘 = 남은 생활비 × {s.todayWeight}% ÷ 남은 기간 비중 합 {s.weightTotal}%
+      </T>
+    </Card>
+  );
+}
+
 /** 오늘 쓸 수 있는 돈 — 파란 메인 카드 (기존 홈 / 캐릭터 홈 공용) */
 export function TodayHeroCard() {
   const { today, summary: s, transactions } = useStore();
@@ -216,7 +258,7 @@ export function TodayHeroCard() {
           오늘 {won(s.todaySpent)}원 사용
         </T>
         <T size={13} color="rgba(255,255,255,0.9)">
-          하루 기준 {won(s.dailyLimit)}원
+          {DOW[today.getDay()]}요일 기준 {won(s.dailyLimit)}원 ({s.todayWeight}%)
         </T>
       </View>
 
@@ -270,6 +312,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
   },
+  dowRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  dowTrack: { flex: 1, height: 8, borderRadius: 4, backgroundColor: colors.bg, overflow: 'hidden' },
+  dowFill: { height: 8, borderRadius: 4 },
   stats: { flexDirection: 'row', gap: 12 },
   stat: { flex: 1, padding: 16 },
   settle: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 16 },

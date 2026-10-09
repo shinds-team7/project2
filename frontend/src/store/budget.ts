@@ -6,7 +6,8 @@
  *  남은 일반 생활비 = 사용 가능 잔액
  *                    − 미납 고정지출 − 미결제 카드 이용액
  *                    − 보호 금액(저축·비상금) − 확정한 예정 지출 − 고액 지출 적립분
- *  일일 기준액     = (남은 일반 생활비 + 오늘 쓴 돈) ÷ 남은 날짜 수(오늘 포함)
+ *  오늘 기준액     = (남은 일반 생활비 + 오늘 쓴 돈) × 오늘 요일 비중 ÷ 남은 날짜들의 요일 비중 합
+ *                    (소비 패턴 분석으로 요일마다 비중을 다르게 배분 — 아래 DOW_WEIGHT)
  *  오늘 남은 금액  = 일일 기준액 − 오늘의 일반 소비
  *
  *  · 거래내역에서 "반영 제외" 하거나 "1/N" 으로 나눈 금액은 생활비로 되돌려 둔다
@@ -54,6 +55,13 @@ export const addBackOf = (t: Transaction) => {
   if (t.splitN && t.splitN > 1) return -t.amount - Math.round(-t.amount / t.splitN);
   return 0;
 };
+
+/**
+ * 요일별 소비 비중(%) — 사용자의 소비 패턴 분석 결과 (Mock). 일주일 합계 100%.
+ * 인덱스는 Date.getDay() 기준: 일·월·화·수·목·금·토. 주말·금요일에 지출이 몰리는 사용자 예시.
+ */
+export const DOW_WEIGHT = [16, 10, 10, 12, 12, 18, 22];
+export const weightOf = (d: Date) => DOW_WEIGHT[d.getDay()];
 
 export function planDailyReserve(plan: { amount: number; weekStart: string }, today: Date): number {
   const payDay = endOfWeek(fromKey(plan.weekStart));
@@ -119,7 +127,16 @@ export function computeBudget(input: BudgetInput) {
 
   const todaySpent = cycleTx.filter((t) => t.date === todayKey).reduce((a, t) => a + spendOf(t), 0);
   const remainingStart = remainingNow + todaySpent;
-  const dailyLimit = Math.max(0, Math.floor(remainingStart / daysLeft));
+  // 남은 날짜(오늘~수입일 전날)의 요일 비중 합 — 오늘 기준액은 이 합에서 오늘 요일이 차지하는 몫
+  const remainingDays: Date[] = [];
+  for (let d = today; d <= ce; d = addDays(d, 1)) remainingDays.push(d);
+  const weightTotal = remainingDays.reduce((a, d) => a + weightOf(d), 0);
+  const shareOf = (d: Date) => Math.max(0, Math.floor((remainingStart * weightOf(d)) / weightTotal));
+  const dailyLimit = shareOf(today);
+  const todayWeight = weightOf(today);
+  /** 앞으로 7일 요일별 배분 (오늘 포함) */
+  const dowPlan = remainingDays.slice(0, 7).map((d) => ({ date: d, weight: weightOf(d), amount: shareOf(d) }));
+  const evenLimit = Math.max(0, Math.floor(remainingStart / daysLeft));
   const todayAvailable = dailyLimit - todaySpent;
   const shortage = remainingNow < 0 ? -remainingNow : 0;
 
@@ -130,7 +147,7 @@ export function computeBudget(input: BudgetInput) {
     .filter((t) => t.date >= toKey(weekStart) && t.date <= todayKey)
     .reduce((a, t) => a + spendOf(t), 0);
   const weekScheduled = upcoming.filter((s) => s.date <= toKey(weekEnd)).reduce((a, s) => a + s.amount, 0);
-  const weekAvailable = dailyLimit * daysLeftInWeek - todaySpent;
+  const weekAvailable = remainingDays.slice(0, daysLeftInWeek).reduce((a, d) => a + shareOf(d), 0) - todaySpent;
 
   const cycleSpent = cycleTx.reduce((a, t) => a + spendOf(t), 0);
   const cycleBudget = cycleSpent + Math.max(0, remainingNow);
@@ -158,6 +175,10 @@ export function computeBudget(input: BudgetInput) {
     remainingNow,
     todaySpent,
     dailyLimit,
+    evenLimit,
+    todayWeight,
+    weightTotal,
+    dowPlan,
     todayAvailable,
     shortage,
     weekSpent,
