@@ -12,7 +12,7 @@ export default function RootLayout() {
     <SafeAreaProvider>
       <AppStoreProvider>
         <View style={styles.outer}>
-          <SafeAreaView style={styles.phone} edges={['top']}>
+          <SafeAreaView style={styles.phone} edges={['top', 'bottom']}>
             <StatusBar style="dark" />
             {/* (tabs): 상단 네비 4탭 / 그 외: 뒤로가기 헤더를 가진 상세 화면 / onboarding: 최초 설정 */}
             <ToastProvider>

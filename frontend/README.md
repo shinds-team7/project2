@@ -3,6 +3,8 @@
 Expo(React Native) + Expo Router 기반. **하나의 코드로 iOS / Android / Web** 을 동시에 빌드한다.
 현재는 멘토링 시연용 Mock 단계로, 모든 데이터는 `src/data/mock.ts` 에서 오늘 날짜 기준으로 생성된다.
 
+실제 Spring·FastAPI·SQLite 기반 서비스로 전환할 때의 코드 경계와 불변식은 [`docs/SERVICE_MIGRATION.md`](docs/SERVICE_MIGRATION.md)를 따른다.
+
 ## 실행
 
 ```bash

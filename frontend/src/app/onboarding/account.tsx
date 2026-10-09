@@ -1,7 +1,7 @@
 /** 온보딩 1 — 계좌 연결 (오픈뱅킹, Mock) + 6개월 거래내역 불러오기 */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 
 import { OnboardingFrame } from '@/components/OnboardingFrame';
@@ -14,10 +14,21 @@ const BANKS = ['신한은행', 'KB국민', '카카오뱅크', '토스뱅크', '�
 export default function Account() {
   const [picked, setPicked] = useState<string[]>(['신한은행', '신한카드']);
   const [state, setState] = useState<'idle' | 'loading' | 'done'>('idle');
+  const connectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (connectTimer.current) clearTimeout(connectTimer.current);
+    },
+    [],
+  );
 
   const connect = () => {
     setState('loading');
-    setTimeout(() => setState('done'), 1600);
+    connectTimer.current = setTimeout(() => {
+      setState('done');
+      connectTimer.current = null;
+    }, 1600);
   };
 
   return (

@@ -1,7 +1,7 @@
 /** 예정 지출 등록 — 자연어(AI) / 캘린더 불러오기 / 직접 입력. AI 초안은 바로 예산에 반영되고 이후 수정·취소 가능 */
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { parsePlan, type PlanDraft } from '@/ai/parsePlan';
@@ -11,17 +11,18 @@ import { useToast } from '@/components/Toast';
 import { Badge, Button, Card, Chip, Screen, Segment, Sheet, T } from '@/components/ui';
 import { CALENDAR_EVENTS } from '@/data/mock';
 import { useStore } from '@/store/AppStore';
+import { computeBudget } from '@/store/budget';
 import { colors, font, noOutline } from '@/theme';
 import { addDays, fromKey, isSameDay, toKey } from '@/utils/date';
 import { DOW, won } from '@/utils/format';
 
 const EXAMPLES = ['다음주 금요일 아카데미 회식', '토요일 저녁먹고 영화', '내일 미용실', '15일 친구 생일 선물 5만원'];
 
-type Result = { id: string; draft: PlanDraft; before: number };
+type Result = { id: string; draft: PlanDraft; before: number; after: number };
 
 export default function NewSchedule() {
   const store = useStore();
-  const { today, memory, summary, addScheduled, removeScheduled, restoreScheduled, scheduled } = store;
+  const { today, memory, budgetInput, addScheduled, removeScheduled, restoreScheduled, scheduled } = store;
   const toast = useToast();
   const [mode, setMode] = useState<'ai' | 'manual'>('ai');
   const [text, setText] = useState('');
@@ -30,11 +31,21 @@ export default function NewSchedule() {
   const [calOpen, setCalOpen] = useState(false);
   const [picked, setPicked] = useState<string[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
+  const registrationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (registrationTimer.current) clearTimeout(registrationTimer.current);
+    },
+    [],
+  );
 
   const register = (inputs: { text: string; source: 'ai' | 'calendar'; date?: Date }[]) => {
     setLoading(true);
-    const before = summary.dailyLimit;
-    setTimeout(() => {
+    if (registrationTimer.current) clearTimeout(registrationTimer.current);
+    registrationTimer.current = setTimeout(() => {
+      let simulatedScheduled = budgetInput.scheduled;
+      let previousDailyLimit = computeBudget({ ...budgetInput, scheduled: simulatedScheduled }).dailyLimit;
       const out: Result[] = inputs.map((inp) => {
         const draft = parsePlan(inp.text, today, memory);
         if (inp.date) {
@@ -49,11 +60,28 @@ export default function NewSchedule() {
           source: inp.source,
           dateGuessed: draft.dateGuessed,
         });
-        return { id, draft, before };
+        simulatedScheduled = [
+          ...simulatedScheduled,
+          {
+            id,
+            title: draft.title,
+            date: toKey(draft.date),
+            amount: draft.total,
+            items: draft.items,
+            source: inp.source,
+            status: 'planned',
+            dateGuessed: draft.dateGuessed,
+          },
+        ];
+        const after = computeBudget({ ...budgetInput, scheduled: simulatedScheduled }).dailyLimit;
+        const result = { id, draft, before: previousDailyLimit, after };
+        previousDailyLimit = after;
+        return result;
       });
       setResults((prev) => [...out, ...prev]);
       setText('');
       setLoading(false);
+      registrationTimer.current = null;
     }, 900);
   };
 
@@ -136,7 +164,6 @@ export default function NewSchedule() {
           <ResultCard
             key={r.id}
             result={r}
-            after={summary.dailyLimit}
             onEdit={() => setEditId(r.id)}
             onCancel={() => {
               const item = scheduled.find((x) => x.id === r.id);
@@ -197,7 +224,7 @@ export default function NewSchedule() {
   );
 }
 
-function ResultCard({ result, after, onEdit, onCancel }: { result: Result; after: number; onEdit: () => void; onCancel: () => void }) {
+function ResultCard({ result, onEdit, onCancel }: { result: Result; onEdit: () => void; onCancel: () => void }) {
   const { today, scheduled } = useStore();
   const s = scheduled.find((x) => x.id === result.id);
   if (!s) return null;
@@ -261,7 +288,7 @@ function ResultCard({ result, after, onEdit, onCancel }: { result: Result; after
         </T>
         <Ionicons name="arrow-forward" size={14} color={colors.textFaint} />
         <T size={15} weight="800" color={colors.brandDark}>
-          {won(after)}원
+          {won(result.after)}원
         </T>
       </View>
       <T size={12} color={colors.textMuted}>

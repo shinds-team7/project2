@@ -22,7 +22,7 @@ export default function Settle() {
     if (!plan) return [];
     const d = fromKey(plan.date);
     const keys = [toKey(d), toKey(addDays(d, 1))];
-    return transactions.filter((t) => isSpend(t) && keys.includes(t.date));
+    return transactions.filter((t) => isSpend(t) && keys.includes(t.date) && (!t.planId || t.planId === plan.id));
   }, [plan, transactions]);
 
   // AI 추천: 예상 금액과 가장 가까운 거래 1건
@@ -213,7 +213,7 @@ export default function Settle() {
         confirmLabel="정산"
         onCancel={() => setConfirming(false)}
         onConfirm={() => {
-          const r = settleScheduled(plan.id, actual);
+          const r = settleScheduled(plan.id, actual, noTx ? [] : sel);
           setConfirming(false);
           setDone({ ...r, actual });
         }}
