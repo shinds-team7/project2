@@ -7,7 +7,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { goBack, SubHeader } from '@/components/SubHeader';
 import { Button, Card, ConfirmModal, IconCircle, Screen, SectionTitle, T } from '@/components/ui';
 import { getCategory } from '@/data/categories';
-import { isSpend } from '@/store/budget';
+import { isSpend, spendOf } from '@/store/budget';
 import { useStore } from '@/store/AppStore';
 import { colors, font, noOutline } from '@/theme';
 import { addDays, fromKey, md, toKey } from '@/utils/date';
@@ -49,7 +49,7 @@ export default function Settle() {
   }
 
   const sel = selected ?? (suggested ? [suggested] : []);
-  const actual = noTx ? Number(raw.replace(/[^0-9]/g, '')) || 0 : candidates.filter((t) => sel.includes(t.id)).reduce((a, t) => a - t.amount, 0);
+  const actual = noTx ? Number(raw.replace(/[^0-9]/g, '')) || 0 : candidates.filter((t) => sel.includes(t.id)).reduce((a, t) => a + spendOf(t), 0);
   const diff = plan.amount - actual;
   const d = fromKey(plan.date);
 
@@ -133,7 +133,7 @@ export default function Settle() {
                     </T>
                   </View>
                   <T size={14} weight="700">
-                    {won(-t.amount)}원
+                    {won(spendOf(t))}원
                   </T>
                   <Ionicons name={on ? 'checkbox' : 'square-outline'} size={20} color={on ? colors.brand : colors.textFaint} />
                 </Pressable>

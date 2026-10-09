@@ -4,7 +4,7 @@ import { router, type Href } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
 
-import { Card, IconCircle, Screen, SectionTitle, T } from '@/components/ui';
+import { Button, Card, Chip, IconCircle, Screen, SectionTitle, Sheet, T } from '@/components/ui';
 import { ACCOUNTS, USER } from '@/data/mock';
 import { useStore } from '@/store/AppStore';
 import { colors } from '@/theme';
@@ -12,8 +12,11 @@ import { md } from '@/utils/date';
 import { won } from '@/utils/format';
 
 export default function My() {
-  const { income, fixed, protectedList, summary, restartOnboarding } = useStore();
-  const [noti, setNoti] = useState({ morning: true, check: true, plan: true, weekly: false });
+  const { income, fixed, protectedList, summary, restartOnboarding, notify, setNotify } = useStore();
+  const [timeOpen, setTimeOpen] = useState(false);
+  const [hour, setHour] = useState(notify.hour);
+  const [minute, setMinute] = useState(notify.minute);
+  const timeLabel = (h: number, m: number) => `${h < 12 ? '오전' : '오후'} ${h % 12 || 12}:${String(m).padStart(2, '0')}`;
   const fixedTotal = fixed.reduce((a, f) => a + f.amount, 0);
   const protectedTotal = protectedList.reduce((a, p) => a + p.amount, 0);
 
@@ -74,7 +77,7 @@ export default function My() {
         <View style={styles.note}>
           <Ionicons name="shield-checkmark" size={14} color={colors.brandDark} />
           <T size={12} color={colors.textSub} style={{ flex: 1 }}>
-            오픈뱅킹 조회 권한만 사용해요 · 매일 새벽 5시 자동 정산
+            오픈뱅킹 조회 권한만 사용해요 · 결제할 때마다 바로 반영
           </T>
         </View>
       </Card>
@@ -95,13 +98,30 @@ export default function My() {
         <Menu label="예정 지출 관리" sub="등록한 소비 일정 수정·삭제" href="/schedule" />
       </Card>
 
-      {/* 알림 */}
+      {/* 알림 (모바일 푸시) */}
       <Card>
-        <SectionTitle title="알림" />
-        <Toggle label="아침 8시 정산 요약" value={noti.morning} onChange={(v) => setNoti({ ...noti, morning: v })} />
-        <Toggle label="확인이 필요한 거래 알림" value={noti.check} onChange={(v) => setNoti({ ...noti, check: v })} />
-        <Toggle label="고액 지출 D-7 알림" value={noti.plan} onChange={(v) => setNoti({ ...noti, plan: v })} />
-        <Toggle label="주간 소비 리포트" value={noti.weekly} onChange={(v) => setNoti({ ...noti, weekly: v })} />
+        <SectionTitle title="푸시 알림" />
+        <Toggle label="매일 정산 요약" value={notify.morning} onChange={(v) => setNotify({ ...notify, morning: v })} />
+        <Pressable
+          disabled={!notify.morning}
+          style={[styles.timeRow, !notify.morning && { opacity: 0.4 }]}
+          onPress={() => {
+            setHour(notify.hour);
+            setMinute(notify.minute);
+            setTimeOpen(true);
+          }}
+        >
+          <T size={14} color={colors.textSub} style={{ flex: 1 }}>
+            받는 시간
+          </T>
+          <T size={15} weight="700" color={colors.brandDark}>
+            {timeLabel(notify.hour, notify.minute)}
+          </T>
+          <Ionicons name="chevron-forward" size={16} color={colors.textFaint} />
+        </Pressable>
+        <Toggle label="결제할 때마다 남은 금액 알림" value={notify.payment} onChange={(v) => setNotify({ ...notify, payment: v })} />
+        <Toggle label="고액 지출 D-7 알림" value={notify.plan} onChange={(v) => setNotify({ ...notify, plan: v })} />
+        <Toggle label="주간 소비 리포트" value={notify.weekly} onChange={(v) => setNotify({ ...notify, weekly: v })} />
       </Card>
 
       <Card style={{ gap: 4, paddingVertical: 8 }}>
@@ -115,6 +135,10 @@ export default function My() {
           <T size={15}>처음 설정 다시 하기 (온보딩)</T>
           <Ionicons name="chevron-forward" size={16} color={colors.textFaint} />
         </Pressable>
+        <Pressable style={styles.menu} onPress={() => router.push('/demo')}>
+          <T size={15}>시연 메뉴 (결제·푸시 시뮬레이션)</T>
+          <Ionicons name="chevron-forward" size={16} color={colors.textFaint} />
+        </Pressable>
         {['공지사항', '고객센터', '로그아웃'].map((l) => (
           <Pressable key={l} style={styles.menu}>
             <T size={15} color={l === '로그아웃' ? colors.textMuted : colors.text}>
@@ -125,8 +149,35 @@ export default function My() {
         ))}
       </Card>
       <T size={12} color={colors.textFaint} style={{ textAlign: 'center' }}>
-        Flex-able 텅장관리 v0.2.0 (mock)
+        Flex-able 텅장관리 v0.3.0 (mock)
       </T>
+
+      <Sheet visible={timeOpen} onClose={() => setTimeOpen(false)} title="정산 요약 받을 시간" subtitle="새벽 정산이 끝난 뒤, 이 시간에 오늘 쓸 수 있는 돈을 푸시로 보내드려요">
+        <T size={13} weight="600" color={colors.textSub} style={{ marginBottom: 8 }}>
+          시
+        </T>
+        <View style={styles.grid}>
+          {[6, 7, 8, 9, 10, 11, 12, 13, 18, 19, 20, 21].map((h) => (
+            <Chip key={h} label={timeLabel(h, 0).replace(':00', '시')} on={hour === h} onPress={() => setHour(h)} />
+          ))}
+        </View>
+        <T size={13} weight="600" color={colors.textSub} style={{ marginTop: 16, marginBottom: 8 }}>
+          분
+        </T>
+        <View style={styles.grid}>
+          {[0, 10, 20, 30, 40, 50].map((m) => (
+            <Chip key={m} label={`${String(m).padStart(2, '0')}분`} on={minute === m} onPress={() => setMinute(m)} />
+          ))}
+        </View>
+        <Button
+          label={`${timeLabel(hour, minute)}로 저장`}
+          style={{ marginTop: 22 }}
+          onPress={() => {
+            setNotify({ ...notify, hour, minute });
+            setTimeOpen(false);
+          }}
+        />
+      </Sheet>
     </Screen>
   );
 }
@@ -176,5 +227,7 @@ const styles = StyleSheet.create({
   avatar: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   note: { flexDirection: 'row', gap: 6, alignItems: 'center', marginTop: 16, backgroundColor: colors.brandSofter, borderRadius: 12, padding: 10 },
+  timeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 10, paddingLeft: 12, marginBottom: 4, borderLeftWidth: 2, borderLeftColor: colors.line },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   menu: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 14 },
 });

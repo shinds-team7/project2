@@ -47,14 +47,14 @@ export default function BudgetDetail() {
 
         <Card>
           <Line label="계좌 잔액" sub="신한 쏠편한 입출금통장 · 08:30 동기화" amount={s.bankBalance} strong />
-          {s.pendingOut > 0 && (
+          {s.addBack > 0 && (
             <Line
-              label="확인 전 거래 되돌림"
-              sub={`확인 필요 ${s.pendingTx.length}건은 확정 전까지 반영하지 않아요`}
-              amount={s.pendingOut}
+              label="반영 제외 · 1/N 조정"
+              sub={`${s.adjusted.map((t) => t.merchant).join(', ')} — 돌려받을 돈은 생활비로 계산해요`}
+              amount={s.addBack}
               sign="+"
               tone="warn"
-              onPress={() => router.push('/review')}
+              onPress={() => router.navigate('/transactions')}
             />
           )}
           <Divider />

@@ -3,15 +3,34 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { ScheduledSpend } from '@/store/budget';
+import { useStore } from '@/store/AppStore';
 import { colors } from '@/theme';
 import { fromKey, isSameDay } from '@/utils/date';
 import { DOW, won } from '@/utils/format';
 import { T } from './ui';
 
-export function ScheduleRow({ item, today, onPress }: { item: ScheduledSpend; today: Date; onPress?: () => void }) {
+/**
+ * 후보 거래(예정 지출) 가로 박스.
+ * 좌측: 날짜 · 일정 · AI 예상 금액 / 우측: 수정 · 삭제 버튼
+ * onPress 를 주면 버튼 대신 화살표(정산 등 다른 화면으로 이동용)
+ */
+export function ScheduleRow({
+  item,
+  today,
+  onPress,
+  onEdit,
+}: {
+  item: ScheduledSpend;
+  today: Date;
+  onPress?: () => void;
+  onEdit?: () => void;
+}) {
+  const { removeScheduled } = useStore();
   const d = fromKey(item.date);
-  return (
-    <Pressable style={styles.item} onPress={onPress ?? (() => router.push({ pathname: '/schedule', params: { edit: item.id } }))}>
+  const sourceLabel = item.source === 'calendar' ? '캘린더 · AI 예상' : item.source === 'ai' ? 'AI 예상' : '직접 입력';
+
+  const body = (
+    <>
       <View style={styles.dateBox}>
         <T size={11} weight="600" color={colors.brandDark}>
           {isSameDay(d, today) ? '오늘' : DOW[d.getDay()]}
@@ -20,38 +39,73 @@ export function ScheduleRow({ item, today, onPress }: { item: ScheduledSpend; to
           {d.getDate()}
         </T>
       </View>
-      <View style={{ flex: 1, gap: 2 }}>
-        <T size={15} weight="600" numberOfLines={1}>
+      <View style={{ flex: 1, gap: 1 }}>
+        <T size={13} color={colors.textSub} numberOfLines={1}>
           {item.title}
         </T>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <Ionicons
-            name={item.source === 'calendar' ? 'calendar-outline' : item.source === 'ai' ? 'sparkles' : 'create-outline'}
-            size={11}
-            color={colors.textMuted}
-          />
-          <T size={12} color={colors.textMuted} numberOfLines={1}>
-            {item.source === 'calendar' ? '캘린더 일정' : item.source === 'ai' ? 'AI 예상 금액' : '직접 입력'}
-            {item.items && item.items.length > 1 ? ` · ${item.items.map((i) => i.label).join('+')}` : ''}
+        <T size={17} weight="800">
+          {won(item.amount)}원
+        </T>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+          <Ionicons name={item.source === 'manual' ? 'create-outline' : 'sparkles'} size={10} color={colors.textMuted} />
+          <T size={11} color={colors.textMuted}>
+            {sourceLabel}
           </T>
         </View>
       </View>
-      <T size={15} weight="700">
-        {won(item.amount)}원
-      </T>
-      <Ionicons name="chevron-forward" size={16} color={colors.textFaint} />
-    </Pressable>
+    </>
+  );
+
+  if (onPress) {
+    return (
+      <Pressable style={styles.box} onPress={onPress}>
+        {body}
+        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      </Pressable>
+    );
+  }
+
+  return (
+    <View style={styles.box}>
+      {body}
+      <View style={styles.actions}>
+        <Pressable
+          style={[styles.btn, styles.edit]}
+          onPress={onEdit ?? (() => router.push({ pathname: '/schedule', params: { edit: item.id } }))}
+        >
+          <T size={13} weight="700" color={colors.brandDark}>
+            수정
+          </T>
+        </Pressable>
+        <Pressable style={[styles.btn, styles.del]} onPress={() => removeScheduled(item.id)}>
+          <T size={13} weight="700" color={colors.textSub}>
+            삭제
+          </T>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  item: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
+  box: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    padding: 12,
+    borderRadius: 16,
+    backgroundColor: colors.bg,
+  },
   dateBox: {
     width: 44,
-    height: 44,
+    height: 50,
     borderRadius: 12,
     backgroundColor: colors.brandSoft,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  actions: { flexDirection: 'row', gap: 6 },
+  btn: { height: 34, paddingHorizontal: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  edit: { backgroundColor: colors.brandSoft },
+  del: { backgroundColor: '#fff', borderWidth: 1, borderColor: colors.line },
 });

@@ -31,14 +31,16 @@ export default function ScheduleList() {
 
   return (
     <View style={{ flex: 1 }}>
-      <SubHeader title="예정 지출" right={<Pressable onPress={() => router.push('/schedule/new')} hitSlop={8}><Ionicons name="add" size={26} color={colors.text} /></Pressable>} />
+      <SubHeader title="후보 거래 (예정 지출)" right={<Pressable onPress={() => router.push('/schedule/new')} hitSlop={8}><Ionicons name="add" size={26} color={colors.text} /></Pressable>} />
       <Screen>
         {toSettle.length > 0 && (
           <Card>
             <SectionTitle title="정산이 필요해요" />
-            {toSettle.map((s) => (
-              <ScheduleRow key={s.id} item={s} today={today} onPress={() => router.push(`/settle/${s.id}`)} />
-            ))}
+            <View style={{ gap: 8 }}>
+              {toSettle.map((s) => (
+                <ScheduleRow key={s.id} item={s} today={today} onPress={() => router.push(`/settle/${s.id}`)} />
+              ))}
+            </View>
           </Card>
         )}
 
@@ -56,9 +58,11 @@ export default function ScheduleList() {
               예정된 소비가 없어요
             </T>
           )}
-          {inCycle.map((s) => (
-            <ScheduleRow key={s.id} item={s} today={today} onPress={() => setEditId(s.id)} />
-          ))}
+          <View style={{ gap: 8 }}>
+            {inCycle.map((s) => (
+              <ScheduleRow key={s.id} item={s} today={today} onEdit={() => setEditId(s.id)} />
+            ))}
+          </View>
           <View style={{ marginTop: 12 }}>
             <AddButton label="소비 일정 추가" onPress={() => router.push('/schedule/new')} />
           </View>
@@ -70,9 +74,11 @@ export default function ScheduleList() {
             <T size={12} color={colors.textMuted} style={{ marginTop: -8, marginBottom: 8 }}>
               다음 수입이 들어온 뒤 새 주기에 반영돼요
             </T>
-            {later.map((s) => (
-              <ScheduleRow key={s.id} item={s} today={today} onPress={() => setEditId(s.id)} />
-            ))}
+            <View style={{ gap: 8 }}>
+              {later.map((s) => (
+                <ScheduleRow key={s.id} item={s} today={today} onEdit={() => setEditId(s.id)} />
+              ))}
+            </View>
           </Card>
         )}
 

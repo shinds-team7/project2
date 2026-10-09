@@ -19,11 +19,13 @@ export type Transaction = {
   /** 계좌 잔액에서 바로 빠지는 거래인지 (신용카드는 false → 미결제 카드 이용액) */
   debit: boolean;
   status: TxStatus;
-  /** 확인 필요 거래에 대한 AI 추정 */
-  guess?: string;
   /** 연결된 예정 지출 */
   planId?: string;
   memo?: string;
+  /** 반영 제외 (회사 경비, 대신 결제 후 돌려받을 돈 등) */
+  excluded?: boolean;
+  /** 1/N 정산 인원 — 내 부담 = amount / splitN */
+  splitN?: number;
 };
 
 export type Account = {
@@ -152,10 +154,11 @@ function scenario(today: Date): Transaction[] {
     { id: 'today-1', date: k(0), time: '08:26', merchant: '메가MGC커피', category: 'cafe', amount: -2000, account: 'Deep Dream 체크', debit: true, status: 'confirmed' },
     { id: 'today-2', date: k(0), time: '12:03', merchant: '한솥도시락', category: 'food', amount: -6900, account: 'Deep Dream 체크', debit: true, status: 'confirmed' },
     { id: 'gift', date: k(-1), time: '21:40', merchant: '카카오톡 선물하기', category: 'shopping', amount: -24900, account: 'Mr.Life 신용', debit: false, status: 'confirmed' },
-    // 확인 필요 거래 3건
-    { id: 'pend-1', date: k(0), time: '07:58', merchant: '카카오뱅크 김플렉스', category: 'pending', amount: -100000, account: '쏠편한 입출금통장', debit: true, status: 'pending', guess: 'self' },
-    { id: 'pend-2', date: k(-1), time: '23:12', merchant: '토스 송금 박서연', category: 'pending', amount: -18000, account: '쏠편한 입출금통장', debit: true, status: 'pending', guess: 'transfer' },
-    { id: 'pend-3', date: k(-2), time: '19:47', merchant: '카카오페이 송금 이준호', category: 'pending', amount: -32000, account: '쏠편한 입출금통장', debit: true, status: 'pending', guess: 'transfer' },
+    // 1/N 시연용: 회식에서 내가 4명분을 한 번에 결제
+    { id: 'nbbang', date: k(-1), time: '22:47', merchant: '역전할맥 신촌점', category: 'food', amount: -96000, account: 'Mr.Life 신용', debit: false, status: 'confirmed' },
+    // 반영 제외 시연용: 동아리 비품을 대신 결제 (나중에 돌려받음)
+    { id: 'proxy', date: k(-2), time: '15:20', merchant: '다이소 홍대점', category: 'living', amount: -27500, account: 'Deep Dream 체크', debit: true, status: 'confirmed' },
+    { id: 'tr-1', date: k(-2), time: '19:47', merchant: '카카오페이 송금 이준호', category: 'transfer', amount: -12000, account: '쏠편한 입출금통장', debit: true, status: 'confirmed' },
   ];
 }
 

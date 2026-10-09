@@ -10,7 +10,7 @@ import { Card, IconCircle, Screen, SectionTitle, Segment, T } from '@/components
 import { SPEND_CATEGORIES } from '@/data/categories';
 import { useStore } from '@/store/AppStore';
 import { colors } from '@/theme';
-import { isSpend } from '@/store/budget';
+import { isSpend, spendOf } from '@/store/budget';
 import { addDays, cycleStart, diffDays, endOfWeek, md, startOfWeek, toKey } from '@/utils/date';
 import { won } from '@/utils/format';
 
@@ -51,15 +51,15 @@ export default function Analysis() {
 
     const cats = SPEND_CATEGORIES.map((c) => {
       const list = cur.filter((t) => t.category === c.id);
-      const amount = list.reduce((a, t) => a - t.amount, 0);
-      const prevAmount = prev.filter((t) => t.category === c.id).reduce((a, t) => a - t.amount, 0);
+      const amount = list.reduce((a, t) => a + spendOf(t), 0);
+      const prevAmount = prev.filter((t) => t.category === c.id).reduce((a, t) => a + spendOf(t), 0);
       return { ...c, amount, count: list.length, prevAmount };
     })
       .filter((c) => c.amount > 0)
       .sort((a, b) => b.amount - a.amount);
 
     const spent = cats.reduce((a, c) => a + c.amount, 0);
-    const prevSpent = prev.reduce((a, t) => a - t.amount, 0);
+    const prevSpent = prev.reduce((a, t) => a + spendOf(t), 0);
     const rising = [...cats]
       .filter((c) => c.prevAmount > 0)
       .map((c) => ({ ...c, diff: (c.amount - c.prevAmount) / c.prevAmount }))

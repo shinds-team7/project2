@@ -9,7 +9,8 @@
  *  일일 기준액     = (남은 일반 생활비 + 오늘 쓴 돈) ÷ 남은 날짜 수(오늘 포함)
  *  오늘 남은 금액  = 일일 기준액 − 오늘의 일반 소비
  *
- *  · 확인 필요(미확인) 거래는 "확정 기준"으로 계산 → 잔액에서 빠진 금액을 다시 더해 두고 홈에 경고 표시
+ *  · 거래내역에서 "반영 제외" 하거나 "1/N" 으로 나눈 금액은 생활비로 되돌려 둔다
+ *  · 결제가 들어올 때마다(오픈뱅킹/카드 알림 → 서버) 오늘 금액을 다시 계산한다
  *  · 계산값이 음수면 0원 + 부족액을 따로 안내 (초과 지출을 숨기지 않음)
  */
 import type { DraftItem } from '@/ai/parsePlan';
@@ -42,7 +43,17 @@ export type BudgetInput = {
 };
 
 const SPEND_IDS = new Set<string>([...SPEND_CATEGORIES.map((c) => c.id), 'transfer']);
-export const isSpend = (t: Transaction) => t.status === 'confirmed' && t.amount < 0 && SPEND_IDS.has(t.category);
+/** 생활비 소비로 세는 거래인지 (반영 제외된 거래는 빠짐) */
+export const isSpend = (t: Transaction) => t.status === 'confirmed' && t.amount < 0 && SPEND_IDS.has(t.category) && !t.excluded;
+/** 실제 내 부담액 (1/N 적용) */
+export const spendOf = (t: Transaction) => (isSpend(t) ? Math.round(-t.amount / (t.splitN && t.splitN > 1 ? t.splitN : 1)) : 0);
+/** 반영 제외·1/N 으로 생활비에 되돌려 놓는 금액 */
+export const addBackOf = (t: Transaction) => {
+  if (t.amount >= 0 || !SPEND_IDS.has(t.category)) return 0;
+  if (t.excluded) return -t.amount;
+  if (t.splitN && t.splitN > 1) return -t.amount - Math.round(-t.amount / t.splitN);
+  return 0;
+};
 
 export function planDailyReserve(plan: { amount: number; weekStart: string }, today: Date): number {
   const payDay = endOfWeek(fromKey(plan.weekStart));
@@ -75,9 +86,10 @@ export function computeBudget(input: BudgetInput) {
 
   // 통장 잔액 (계좌 연동 기준) — 신용카드 결제는 잔액에서 바로 빠지지 않음
   const bankBalance = openingBalance + cycleTx.filter((t) => t.debit).reduce((a, t) => a + t.amount, 0);
-  const pendingTx = transactions.filter((t) => t.status === 'pending');
-  const pendingOut = pendingTx.filter((t) => t.debit && t.amount < 0 && t.date >= csKey).reduce((a, t) => a - t.amount, 0);
-  const availableBalance = bankBalance + pendingOut;
+  // 반영 제외·1/N: 돌려받을 돈/생활비가 아닌 돈은 생활비 계산에서 되돌려 둔다
+  const adjusted = cycleTx.filter((t) => addBackOf(t) > 0);
+  const addBack = adjusted.reduce((a, t) => a + addBackOf(t), 0);
+  const availableBalance = bankBalance + addBack;
 
   const unpaidFixed = unpaidFixedList(fixed, today, income.payday).list;
   const unpaidFixedTotal = unpaidFixed.reduce((a, f) => a + f.item.amount, 0);
@@ -105,7 +117,7 @@ export function computeBudget(input: BudgetInput) {
 
   const remainingNow = availableBalance - unpaidFixedTotal - cardUnpaid - protectedTotal - plannedTotal - reserveTotal;
 
-  const todaySpent = cycleTx.filter((t) => t.date === todayKey && isSpend(t)).reduce((a, t) => a - t.amount, 0);
+  const todaySpent = cycleTx.filter((t) => t.date === todayKey).reduce((a, t) => a + spendOf(t), 0);
   const remainingStart = remainingNow + todaySpent;
   const dailyLimit = Math.max(0, Math.floor(remainingStart / daysLeft));
   const todayAvailable = dailyLimit - todaySpent;
@@ -115,12 +127,12 @@ export function computeBudget(input: BudgetInput) {
   const weekEnd = endOfWeek(today);
   const daysLeftInWeek = Math.min(diffDays(weekEnd, today), diffDays(ce, today)) + 1;
   const weekSpent = transactions
-    .filter((t) => isSpend(t) && t.date >= toKey(weekStart) && t.date <= todayKey)
-    .reduce((a, t) => a - t.amount, 0);
+    .filter((t) => t.date >= toKey(weekStart) && t.date <= todayKey)
+    .reduce((a, t) => a + spendOf(t), 0);
   const weekScheduled = upcoming.filter((s) => s.date <= toKey(weekEnd)).reduce((a, s) => a + s.amount, 0);
   const weekAvailable = dailyLimit * daysLeftInWeek - todaySpent;
 
-  const cycleSpent = cycleTx.filter(isSpend).reduce((a, t) => a - t.amount, 0);
+  const cycleSpent = cycleTx.reduce((a, t) => a + spendOf(t), 0);
   const cycleBudget = cycleSpent + Math.max(0, remainingNow);
 
   return {
@@ -129,8 +141,8 @@ export function computeBudget(input: BudgetInput) {
     nextPayday: np,
     daysLeft,
     bankBalance,
-    pendingTx,
-    pendingOut,
+    adjusted,
+    addBack,
     availableBalance,
     unpaidFixed,
     unpaidFixedTotal,

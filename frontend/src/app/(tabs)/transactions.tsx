@@ -121,25 +121,38 @@ export default function Transactions() {
               {list.map((t) => {
                 const c = getCategory(t.category);
                 const income = t.amount > 0;
-                const pending = t.status === 'pending';
+                const split = t.splitN && t.splitN > 1 ? t.splitN : 0;
                 return (
-                  <Pressable key={t.id} style={styles.tx} disabled={!pending} onPress={() => router.push('/review')}>
+                  <Pressable key={t.id} style={styles.tx} onPress={() => router.push(`/tx/${t.id}`)}>
                     <IconCircle name={c.icon} color={c.color} size={40} />
                     <View style={{ flex: 1, gap: 2 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <T size={15} weight="600" numberOfLines={1} style={{ flexShrink: 1 }}>
                           {t.merchant}
                         </T>
-                        {pending && <Badge label="확인 필요" color={colors.warn} bg={colors.warnSoft} />}
+                        {t.excluded && <Badge label="반영 제외" color={colors.textSub} bg={colors.bg} />}
+                        {split > 0 && <Badge label={`1/${split}`} color={colors.info} bg={colors.infoSoft} />}
                       </View>
                       <T size={12} color={colors.textMuted} numberOfLines={1}>
                         {t.time} · {c.name}{t.memo ? `(${t.memo})` : ''} · {t.account}
                       </T>
                     </View>
-                    <T size={15} weight="700" color={income ? colors.info : colors.text}>
-                      {income ? '+' : ''}
-                      {won(t.amount)}원
-                    </T>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <T
+                        size={15}
+                        weight="700"
+                        color={income ? colors.info : t.excluded ? colors.textFaint : colors.text}
+                        style={t.excluded || split ? { textDecorationLine: 'line-through' } : undefined}
+                      >
+                        {income ? '+' : ''}
+                        {won(t.amount)}원
+                      </T>
+                      {split > 0 && (
+                        <T size={12} weight="700" color={colors.info}>
+                          내 부담 {won(Math.round(t.amount / split))}원
+                        </T>
+                      )}
+                    </View>
                   </Pressable>
                 );
               })}

@@ -5,32 +5,44 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { SubHeader } from '@/components/SubHeader';
 import { Card, Screen, T } from '@/components/ui';
+import { spendOf } from '@/store/budget';
 import { useStore } from '@/store/AppStore';
 import { colors } from '@/theme';
 import { diffDays, endOfWeek, fromKey, toKey } from '@/utils/date';
 import { won } from '@/utils/format';
 
-type Noti = { id: string; icon: 'sunny' | 'alert-circle' | 'receipt' | 'flag' | 'sparkles'; color: string; title: string; body: string; time: string; href?: Href; unread?: boolean };
+type Noti = { id: string; icon: 'sunny' | 'card' | 'receipt' | 'flag' | 'sparkles'; color: string; title: string; body: string; time: string; href?: Href; unread?: boolean };
 
 export default function Notifications() {
-  const { summary: s, scheduled, plans, today } = useStore();
+  const { summary: s, scheduled, plans, today, transactions, notify } = useStore();
   const list: Noti[] = [];
+  const hhmm = `${String(notify.hour).padStart(2, '0')}:${String(notify.minute).padStart(2, '0')}`;
 
-  if (s.pendingTx.length)
-    list.push({ id: 'pend', icon: 'alert-circle', color: colors.warn, title: `확인이 필요한 거래 ${s.pendingTx.length}건`, body: '어떤 돈인지 알려주시면 오늘 금액을 정확하게 계산할게요', time: '08:31', href: '/review', unread: true });
+  // 결제 푸시: 결제가 들어올 때마다 오늘 남은 금액을 다시 계산해 알림
+  if (notify.payment) {
+    let remain = s.todayAvailable;
+    transactions
+      .filter((t) => t.date === toKey(today) && t.amount < 0 && spendOf(t) > 0)
+      .forEach((t, i) => {
+        list.push({ id: `pay-${t.id}`, icon: 'card', color: colors.text, title: `${t.merchant} ${won(spendOf(t))}원 결제`, body: `오늘 쓸 수 있는 돈 ${won(Math.max(0, remain))}원 남았어요`, time: t.time, href: `/tx/${t.id}`, unread: i === 0 });
+        remain += spendOf(t);
+      });
+  }
 
-  list.push({ id: 'morning', icon: 'sunny', color: colors.brand, title: `오늘은 ${won(s.dailyLimit)}원까지 쓸 수 있어요`, body: `어제 정산을 마쳤어요. 다음 수입일까지 ${s.daysLeft}일 남았어요`, time: '08:00', href: '/budget-detail', unread: true });
+  if (notify.morning)
+    list.push({ id: 'morning', icon: 'sunny', color: colors.brand, title: `오늘은 ${won(s.dailyLimit)}원까지 쓸 수 있어요`, body: `어제 정산을 마쳤어요. 다음 수입일까지 ${s.daysLeft}일 남았어요`, time: hhmm, href: '/budget-detail' });
 
   scheduled
     .filter((x) => x.status === 'planned' && x.date < toKey(today))
-    .forEach((x) => list.push({ id: `settle-${x.id}`, icon: 'receipt', color: colors.info, title: `‘${x.title}’ 정산해 주세요`, body: `예상 ${won(x.amount)}원 · 실제 결제와 연결하면 남은 돈을 생활비로 돌려드려요`, time: '08:00', href: `/settle/${x.id}` }));
+    .forEach((x) => list.push({ id: `settle-${x.id}`, icon: 'receipt', color: colors.info, title: `‘${x.title}’ 정산해 주세요`, body: `예상 ${won(x.amount)}원 · 실제 결제와 연결하면 남은 돈을 생활비로 돌려드려요`, time: hhmm, href: `/settle/${x.id}` }));
 
   scheduled
     .filter((x) => x.status === 'planned' && x.source === 'calendar' && x.date >= toKey(today))
     .slice(0, 1)
     .forEach((x) => list.push({ id: `cal-${x.id}`, icon: 'sparkles', color: colors.brand, title: `캘린더 일정 ‘${x.title}’을 예산에 넣었어요`, body: `AI 예상 ${won(x.amount)}원 · 다르면 수정해 주세요`, time: '어제', href: { pathname: '/schedule', params: { edit: x.id } } }));
 
-  plans
+  if (notify.plan)
+    plans
     .filter((p) => endOfWeek(fromKey(p.weekStart)) >= today)
     .forEach((p) => list.push({ id: `plan-${p.id}`, icon: 'flag', color: colors.brandDark, title: `${p.title} D-${diffDays(fromKey(p.weekStart), today)}`, body: `${won(p.amount)}원 결제 예정 · 매일 조금씩 모으는 중이에요`, time: '어제' }));
 
@@ -65,7 +77,7 @@ export default function Notifications() {
           ))}
         </Card>
         <T size={12} color={colors.textMuted} style={{ textAlign: 'center' }}>
-          매일 아침 8시에 정산 결과를 푸시로 알려드려요 · 마이에서 변경
+          {notify.morning ? `매일 ${notify.hour < 12 ? '오전' : '오후'} ${notify.hour % 12 || 12}시${notify.minute ? ` ${notify.minute}분` : ''}에 정산 결과를 푸시로 보내드려요 · 마이에서 변경` : '아침 정산 알림이 꺼져 있어요 · 마이에서 변경'}
         </T>
       </Screen>
     </View>

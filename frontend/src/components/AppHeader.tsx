@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { colors } from '@/theme';
 import { useStore } from '@/store/AppStore';
+import { toKey } from '@/utils/date';
 import { T } from './ui';
 
 export function Logo({ size = 30 }: { size?: number }) {
@@ -23,7 +24,8 @@ const TABS = [
 
 export function AppHeader() {
   const pathname = usePathname();
-  const pendingCount = useStore().summary.pendingTx.length;
+  const { scheduled, today } = useStore();
+  const pendingCount = scheduled.filter((x) => x.status === 'planned' && x.date < toKey(today)).length;
   return (
     <View style={styles.wrap}>
       <View style={styles.top}>

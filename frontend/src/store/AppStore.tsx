@@ -10,7 +10,6 @@ import { createContext, useContext, useMemo, useState, type ReactNode } from 're
 import { Platform } from 'react-native';
 
 import { DEFAULT_INSIGHTS, DEFAULT_MEMORY, type Insight, type MemoryItem } from '@/ai/memory';
-import type { CategoryId } from '@/data/categories';
 import {
   buildTransactions,
   DEFAULT_FIXED,
@@ -25,6 +24,7 @@ import { addDays, diffDays, endOfWeek, startOfDay, startOfWeek, toKey } from '@/
 import { computeBudget, type BudgetInput, type BudgetSummary, type LargePlan, type ScheduledSpend } from './budget';
 
 type Income = { amount: number; payday: number };
+export type NotifySettings = { morning: boolean; hour: number; minute: number; payment: boolean; plan: boolean; weekly: boolean };
 
 type Store = {
   today: Date;
@@ -40,7 +40,13 @@ type Store = {
   setProtected: (p: Protected[]) => void;
 
   transactions: Transaction[];
-  confirmTx: (id: string, patch: { category: CategoryId; memo?: string }) => void;
+  /** 거래 수정 — 반영 제외, 1/N, 카테고리 */
+  updateTx: (id: string, patch: Partial<Pick<Transaction, 'excluded' | 'splitN' | 'memo' | 'category'>>) => void;
+  /** 새 결제 수신 (시연: /demo/pay) — 서버가 카드/오픈뱅킹 알림을 받아 넣어주는 부분 */
+  addTransaction: (t: Omit<Transaction, 'id' | 'status'> & { id?: string }) => void;
+
+  notify: NotifySettings;
+  setNotify: (n: NotifySettings) => void;
 
   scheduled: ScheduledSpend[];
   addScheduled: (s: Omit<ScheduledSpend, 'id' | 'status'>) => string;
@@ -143,6 +149,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     { id: 'p1', title: '연말 콘서트 티켓', amount: 165000, weekStart: toKey(addDays(startOfWeek(today), 7 * 6)) },
   ]);
   const [memory, setMemory] = useState<MemoryItem[]>(DEFAULT_MEMORY);
+  const [notify, setNotify] = useState<NotifySettings>({ morning: true, hour: 8, minute: 0, payment: true, plan: true, weekly: false });
   const [insights, setInsights] = useState<Insight[]>(DEFAULT_INSIGHTS);
 
   const value = useMemo<Store>(() => {
@@ -176,8 +183,15 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       protectedList,
       setProtected,
       transactions,
-      confirmTx: (id, patch) =>
-        setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch, status: 'confirmed' } : t))),
+      updateTx: (id, patch) => setTransactions((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t))),
+      addTransaction: (t) =>
+        setTransactions((prev) => {
+          const id = t.id ?? nextId('tx');
+          if (prev.some((x) => x.id === id)) return prev; // 같은 결제 중복 수신 방지
+          return [{ ...t, id, status: 'confirmed' as const }, ...prev];
+        }),
+      notify,
+      setNotify,
       scheduled,
       addScheduled: (s) => {
         const id = nextId('s');
@@ -209,7 +223,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       budgetInput,
       summary: computeBudget(budgetInput),
     };
-  }, [today, onboarded, income, fixed, protectedList, transactions, scheduled, plans, memory, insights]);
+  }, [today, onboarded, income, fixed, protectedList, transactions, scheduled, plans, memory, insights, notify]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

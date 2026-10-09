@@ -12,7 +12,8 @@ import { diffDays, endOfWeek, fromKey, md, startOfWeek, toKey, weekLabel } from 
 import { DOW, won } from '@/utils/format';
 
 export default function Home() {
-  const { today, summary, scheduled, plans } = useStore();
+  const { today, summary, scheduled, plans, transactions } = useStore();
+  const lastPay = transactions.find((t) => t.date === toKey(today) && t.amount < 0);
   const s = summary;
 
   const weekEndKey = toKey(endOfWeek(today));
@@ -28,35 +29,12 @@ export default function Home() {
 
   return (
     <Screen>
-      {/* 확인 필요 거래 — 확정 기준 금액임을 알림 */}
-      {s.pendingTx.length > 0 && (
-        <Pressable style={styles.pending} onPress={() => router.push('/review')}>
-          <Ionicons name="alert-circle" size={18} color={colors.warn} />
-          <View style={{ flex: 1 }}>
-            <T size={14} weight="700">
-              확인이 필요한 거래 {s.pendingTx.length}건
-            </T>
-            <T size={12} color={colors.textSub}>
-              아래 금액은 확인 전 잠정 금액이에요 (−{won(s.pendingOut)}원 미반영)
-            </T>
-          </View>
-          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-        </Pressable>
-      )}
-
       {/* 오늘 사용 가능한 금액 */}
       <View style={styles.hero}>
         <View style={styles.heroTop}>
           <T size={14} weight="600" color="rgba(255,255,255,0.85)">
             {today.getMonth() + 1}월 {today.getDate()}일 ({DOW[today.getDay()]}) · 오늘 쓸 수 있는 돈
           </T>
-          {s.pendingTx.length > 0 && (
-            <View style={styles.tentative}>
-              <T size={11} weight="700" color="#fff">
-                잠정
-              </T>
-            </View>
-          )}
         </View>
         <T size={38} weight="800" color="#fff" style={{ marginTop: 8, letterSpacing: -1 }}>
           {won(Math.max(0, s.todayAvailable))}
@@ -91,8 +69,8 @@ export default function Home() {
         )}
 
         <Pressable style={styles.heroFoot} onPress={() => router.push('/budget-detail')}>
-          <T size={12} color="rgba(255,255,255,0.8)">
-            마지막 정산 오늘 05:00 · 계좌 동기화 08:30
+          <T size={12} color="rgba(255,255,255,0.8)" numberOfLines={1} style={{ flex: 1 }}>
+            {lastPay ? `최근 반영 · ${lastPay.merchant} ${won(-lastPay.amount)}원 (${lastPay.time})` : '마지막 정산 오늘 05:00'}
           </T>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <T size={12} weight="700" color="#fff">
@@ -183,7 +161,7 @@ export default function Home() {
       {/* 이번 주 예정된 소비 */}
       <Card>
         <SectionTitle
-          title="이번 주 예정된 소비"
+          title="이번 주 후보 거래"
           right={
             <Pressable onPress={() => router.push('/schedule')} style={styles.more} hitSlop={8}>
               <T size={13} color={colors.textMuted}>
@@ -195,12 +173,12 @@ export default function Home() {
         />
         {thisWeek.length === 0 ? (
           <View style={styles.empty}>
-            <T size={14} color={colors.textMuted}>
-              이번 주에 예정된 소비가 없어요
+            <T size={14} color={colors.textMuted} style={{ textAlign: 'center', lineHeight: 20 }}>
+              이번 주에 예정된 소비가 없어요{'\n'}일정을 적으면 AI가 예상 금액을 미리 빼둘게요
             </T>
           </View>
         ) : (
-          <View style={{ gap: 4, marginBottom: 12 }}>
+          <View style={{ gap: 8, marginBottom: 12 }}>
             {thisWeek.map((x) => (
               <ScheduleRow key={x.id} item={x} today={today} />
             ))}
@@ -256,17 +234,8 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-  pending: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    backgroundColor: colors.warnSoft,
-    borderRadius: 16,
-    padding: 14,
-  },
   hero: { backgroundColor: colors.brand, borderRadius: 24, padding: 22, paddingBottom: 16 },
   heroTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  tentative: { backgroundColor: 'rgba(0,0,0,0.18)', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
   heroBar: { height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.3)', marginTop: 16, overflow: 'hidden' },
   heroFill: { height: 6, borderRadius: 3 },
   heroRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
