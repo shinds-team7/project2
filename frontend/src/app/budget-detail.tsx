@@ -9,7 +9,7 @@ import { Button, Card, Screen, Sheet, T } from '@/components/ui';
 import { useStore } from '@/store/AppStore';
 import { colors, font, noOutline } from '@/theme';
 import { fromKey, md } from '@/utils/date';
-import { won } from '@/utils/format';
+import { DOW, won } from '@/utils/format';
 
 type Editing = { id: string; name: string; amount: number } | null;
 
@@ -38,7 +38,7 @@ export default function BudgetDetail() {
             {md(s.cycleStart)} ~ {md(s.cycleEnd)} 정산 주기 · 다음 수입일까지 {s.daysLeft}일 (오늘 포함)
           </T>
           <T size={26} weight="800" style={{ marginTop: 6 }}>
-            하루 {won(s.dailyLimit)}원
+            오늘({DOW[today.getDay()]}) {won(s.dailyLimit)}원
           </T>
           <T size={13} color={colors.textMuted} style={{ marginTop: 4 }}>
             오늘 {won(s.todaySpent)}원 써서 {won(Math.max(0, s.todayAvailable))}원 남았어요
@@ -94,7 +94,10 @@ export default function BudgetDetail() {
           <Divider />
           <Line label="남은 일반 생활비" amount={s.remainingNow} strong />
           <Line label={`+ 오늘 쓴 돈`} amount={s.todaySpent} sign="+" />
-          <Line label={`÷ 남은 날짜 ${s.daysLeft}일`} amount={s.dailyLimit} result />
+          <Line label={`× 오늘(${DOW[today.getDay()]}) 요일 비중 ${s.todayWeight}%`} sub={`남은 ${s.daysLeft}일의 요일 비중 합 ${s.weightTotal}% 중 ${s.todayWeight}%`} amount={s.dailyLimit} result />
+          <T size={12} color={colors.textMuted} style={{ marginTop: 6 }}>
+            단순히 {s.daysLeft}일로 똑같이 나누면 하루 {won(s.evenLimit)}원이지만, 소비 패턴에 맞춰 요일마다 다르게 배분해요.
+          </T>
         </Card>
 
         <Card style={{ gap: 10 }}>
@@ -105,7 +108,8 @@ export default function BudgetDetail() {
             </T>
           </View>
           <Rule text="다음 수입은 실제로 입금된 뒤에 새 주기로 반영해요. 입금 예정 금액을 미리 쓰지 않아요." />
-          <Rule text="덜 쓴 돈과 초과한 돈은 남은 날짜 전체에 나눠서 반영해요." />
+          <Rule text="소비 패턴을 분석해 요일마다 비중(%)을 다르게 배분해요. 주말처럼 많이 쓰는 요일은 더 받아요." />
+          <Rule text="덜 쓴 돈과 초과한 돈은 남은 날짜 전체에 요일 비중대로 나눠서 반영해요." />
           <Rule text="예정 지출이 실제로 결제되면 확보해 둔 금액을 실제 거래로 바꿔요. 두 번 빠지지 않아요." />
           <Rule text={`AI는 금액을 '제안'만 하고, 계산은 정해진 규칙으로만 해요.`} />
         </Card>
