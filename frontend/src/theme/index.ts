@@ -1,10 +1,12 @@
 import { Platform } from 'react-native';
 
 export const colors = {
-  brand: '#12B76A',
-  brandDark: '#039855',
-  brandSoft: '#E8F8EF',
-  brandSofter: '#F3FBF6',
+  /** 신한 블루 */
+  brand: '#0046FF',
+  brandDark: '#0034C2',
+  brandSoft: '#E6EDFF',
+  brandSofter: '#F3F6FF',
+  brandBorder: '#A9C0FF',
 
   bg: '#F2F4F6',
   card: '#FFFFFF',

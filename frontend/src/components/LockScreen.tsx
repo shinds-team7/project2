@@ -63,7 +63,7 @@ export function LockScreen({
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: '#0B3B26', padding: 16 },
+  wrap: { flex: 1, backgroundColor: '#0A1F5C', padding: 16 },
   noti: { marginTop: 36, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 22, padding: 16 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   icon: { width: 22, height: 22, borderRadius: 6, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },

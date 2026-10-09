@@ -91,7 +91,7 @@ export default function Fixed() {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: 16, backgroundColor: colors.bg },
   day: { width: 42, height: 28, borderRadius: 8, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
-  addBox: { gap: 8, marginTop: 10, padding: 14, borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', borderColor: '#A6E3C4' },
+  addBox: { gap: 8, marginTop: 10, padding: 14, borderRadius: 16, borderWidth: 1.5, borderStyle: 'dashed', borderColor: colors.brandBorder },
   input: { height: 46, borderRadius: 12, backgroundColor: colors.bg, paddingHorizontal: 12, fontSize: 15, color: colors.text, fontFamily: font },
   plus: { width: 46, height: 46, borderRadius: 12, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
 });

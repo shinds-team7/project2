@@ -291,7 +291,7 @@ export const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1.5,
     borderStyle: 'dashed',
-    borderColor: '#A6E3C4',
+    borderColor: colors.brandBorder,
     backgroundColor: colors.brandSofter,
     flexDirection: 'row',
     alignItems: 'center',
