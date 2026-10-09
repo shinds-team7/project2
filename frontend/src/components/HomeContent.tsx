@@ -13,8 +13,7 @@ import { diffDays, endOfWeek, fromKey, md, startOfWeek, toKey, weekLabel } from 
 import { DOW, won } from '@/utils/format';
 
 export function HomeContent({ top, hideHero }: { top?: ReactNode; hideHero?: boolean }) {
-  const { today, summary, scheduled, plans, transactions } = useStore();
-  const lastPay = transactions.find((t) => t.date === toKey(today) && t.amount < 0);
+  const { today, summary, scheduled, plans } = useStore();
   const s = summary;
 
   const weekEndKey = toKey(endOfWeek(today));
@@ -22,8 +21,6 @@ export function HomeContent({ top, hideHero }: { top?: ReactNode; hideHero?: boo
   const toSettle = scheduled.filter((x) => x.status === 'planned' && x.date < toKey(today));
   const upcomingPlans = plans.filter((p) => endOfWeek(fromKey(p.weekStart)) >= today);
 
-  const over = s.todayAvailable < 0;
-  const usedRatio = s.dailyLimit > 0 ? Math.min(1, s.todaySpent / s.dailyLimit) : 1;
   const weekTotal = s.weekSpent + Math.max(0, s.weekAvailable);
   const weekRatio = weekTotal > 0 ? Math.min(1, s.weekSpent / weekTotal) : 0;
   const dPay = diffDays(s.nextPayday, today);
@@ -33,61 +30,7 @@ export function HomeContent({ top, hideHero }: { top?: ReactNode; hideHero?: boo
       {top}
 
       {/* 오늘 사용 가능한 금액 */}
-      {!hideHero && (
-        <>
-      <View style={styles.hero}>
-        <View style={styles.heroTop}>
-          <T size={14} weight="600" color="rgba(255,255,255,0.85)">
-            {today.getMonth() + 1}월 {today.getDate()}일 ({DOW[today.getDay()]}) · 오늘 쓸 수 있는 돈
-          </T>
-        </View>
-        <T size={38} weight="800" color="#fff" style={{ marginTop: 8, letterSpacing: -1 }}>
-          {won(Math.max(0, s.todayAvailable))}
-          <T size={24} weight="700" color="#fff">
-            원
-          </T>
-        </T>
-        {over && (
-          <T size={13} weight="600" color="#FFE4E2" style={{ marginTop: 2 }}>
-            오늘 {won(-s.todayAvailable)}원 초과했어요 · 남은 {s.daysLeft - 1}일에 나눠서 반영돼요
-          </T>
-        )}
-        <View style={styles.heroBar}>
-          <View style={[styles.heroFill, { width: `${usedRatio * 100}%`, backgroundColor: over ? '#FDA29B' : '#fff' }]} />
-        </View>
-        <View style={styles.heroRow}>
-          <T size={13} color="rgba(255,255,255,0.9)">
-            오늘 {won(s.todaySpent)}원 사용
-          </T>
-          <T size={13} color="rgba(255,255,255,0.9)">
-            하루 기준 {won(s.dailyLimit)}원
-          </T>
-        </View>
-
-        {s.todayPlanned.length > 0 && (
-          <View style={styles.heroPlan}>
-            <Ionicons name="calendar" size={14} color="#fff" />
-            <T size={13} weight="600" color="#fff" style={{ flex: 1 }}>
-              오늘 예정 소비 {won(s.todayPlanned.reduce((a, x) => a + x.amount, 0))}원은 따로 확보했어요 · {s.todayPlanned.map((x) => x.title).join(', ')}
-            </T>
-          </View>
-        )}
-
-        <Pressable style={styles.heroFoot} onPress={() => router.push('/budget-detail')}>
-          <T size={12} color="rgba(255,255,255,0.8)" numberOfLines={1} style={{ flex: 1 }}>
-            {lastPay ? `최근 반영 · ${lastPay.merchant} ${won(-lastPay.amount)}원 (${lastPay.time})` : '마지막 정산 오늘 05:00'}
-          </T>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <T size={12} weight="700" color="#fff">
-              계산 근거
-            </T>
-            <Ionicons name="chevron-forward" size={14} color="#fff" />
-          </View>
-        </Pressable>
-      </View>
-
-        </>
-      )}
+      {!hideHero && <TodayHeroCard />}
 
       {s.shortage > 0 && (
         <Card style={{ backgroundColor: colors.dangerSoft }}>
@@ -238,6 +181,67 @@ export function HomeContent({ top, hideHero }: { top?: ReactNode; hideHero?: boo
         <AddButton label="고액 지출 계획하기" onPress={() => router.navigate('/plan')} />
       </Card>
     </Screen>
+  );
+}
+
+/** 오늘 쓸 수 있는 돈 — 파란 메인 카드 (기존 홈 / 캐릭터 홈 공용) */
+export function TodayHeroCard() {
+  const { today, summary: s, transactions } = useStore();
+  const lastPay = transactions.find((t) => t.date === toKey(today) && t.amount < 0);
+  const over = s.todayAvailable < 0;
+  const usedRatio = s.dailyLimit > 0 ? Math.min(1, s.todaySpent / s.dailyLimit) : 1;
+  return (
+    <View style={styles.hero}>
+      <View style={styles.heroTop}>
+        <T size={14} weight="600" color="rgba(255,255,255,0.85)">
+          {today.getMonth() + 1}월 {today.getDate()}일 ({DOW[today.getDay()]}) · 오늘 쓸 수 있는 돈
+        </T>
+      </View>
+      <T size={38} weight="800" color="#fff" style={{ marginTop: 8, letterSpacing: -1 }}>
+        {won(Math.max(0, s.todayAvailable))}
+        <T size={24} weight="700" color="#fff">
+          원
+        </T>
+      </T>
+      {over && (
+        <T size={13} weight="600" color="#FFE4E2" style={{ marginTop: 2 }}>
+          오늘 {won(-s.todayAvailable)}원 초과했어요 · 남은 {s.daysLeft - 1}일에 나눠서 반영돼요
+        </T>
+      )}
+      <View style={styles.heroBar}>
+        <View style={[styles.heroFill, { width: `${usedRatio * 100}%`, backgroundColor: over ? '#FDA29B' : '#fff' }]} />
+      </View>
+      <View style={styles.heroRow}>
+        <T size={13} color="rgba(255,255,255,0.9)">
+          오늘 {won(s.todaySpent)}원 사용
+        </T>
+        <T size={13} color="rgba(255,255,255,0.9)">
+          하루 기준 {won(s.dailyLimit)}원
+        </T>
+      </View>
+
+      {s.todayPlanned.length > 0 && (
+        <View style={styles.heroPlan}>
+          <Ionicons name="calendar" size={14} color="#fff" />
+          <T size={13} weight="600" color="#fff" style={{ flex: 1 }}>
+            오늘 예정 소비 {won(s.todayPlanned.reduce((a, x) => a + x.amount, 0))}원은 따로 확보했어요 ·{' '}
+            {s.todayPlanned.map((x) => x.title).join(', ')}
+          </T>
+        </View>
+      )}
+
+      <Pressable style={styles.heroFoot} onPress={() => router.push('/budget-detail')}>
+        <T size={12} color="rgba(255,255,255,0.8)" numberOfLines={1} style={{ flex: 1 }}>
+          {lastPay ? `최근 반영 · ${lastPay.merchant} ${won(-lastPay.amount)}원 (${lastPay.time})` : '마지막 정산 오늘 05:00'}
+        </T>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <T size={12} weight="700" color="#fff">
+            계산 근거
+          </T>
+          <Ionicons name="chevron-forward" size={14} color="#fff" />
+        </View>
+      </Pressable>
+    </View>
   );
 }
 
