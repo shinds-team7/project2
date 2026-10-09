@@ -1,8 +1,6 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
 import type { ReactNode } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 
-import { colors } from '@/theme';
 import { DOW } from '@/utils/format';
 import { T } from './ui';
 
@@ -35,9 +33,7 @@ export function LockScreen({
 
       <Pressable style={styles.noti} onPress={onOpen}>
         <View style={styles.head}>
-          <View style={styles.icon}>
-            <Ionicons name="wallet" size={14} color="#fff" />
-          </View>
+          <Image source={require('../../assets/brand/logo.png')} style={styles.icon} />
           <T size={13} weight="600" color="rgba(255,255,255,0.75)" style={{ flex: 1 }}>
             텅장관리
           </T>
@@ -66,5 +62,5 @@ const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: '#0A1F5C', padding: 16 },
   noti: { marginTop: 36, backgroundColor: 'rgba(255,255,255,0.16)', borderRadius: 22, padding: 16 },
   head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  icon: { width: 22, height: 22, borderRadius: 6, backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
+  icon: { width: 22, height: 22, borderRadius: 6 },
 });

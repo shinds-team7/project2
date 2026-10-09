@@ -1,18 +1,15 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, usePathname } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { colors } from '@/theme';
 import { useStore } from '@/store/AppStore';
 import { toKey } from '@/utils/date';
 import { T } from './ui';
 
+/** 서비스 로고 (assets/brand/logo.png — 다운로드 받은 flex-logo 기반) */
 export function Logo({ size = 30 }: { size?: number }) {
-  return (
-    <View style={[styles.logo, { width: size, height: size, borderRadius: size * 0.3 }]}>
-      <Ionicons name="wallet" size={size * 0.56} color="#fff" />
-    </View>
-  );
+  return <Image source={require('../../assets/brand/logo.png')} style={{ width: size, height: size, borderRadius: size * 0.28 }} />;
 }
 
 const TABS = [
@@ -67,7 +64,6 @@ const styles = StyleSheet.create({
   brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   actions: { flexDirection: 'row', gap: 14 },
   dot: { position: 'absolute', top: 0, right: 0, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger, borderWidth: 1.5, borderColor: '#fff' },
-  logo: { backgroundColor: colors.brand, alignItems: 'center', justifyContent: 'center' },
   nav: { flexDirection: 'row', paddingHorizontal: 8 },
   tab: { flex: 1, alignItems: 'center', paddingTop: 6 },
   indicator: { height: 2.5, width: 36, borderRadius: 2, marginTop: 9, backgroundColor: 'transparent' },

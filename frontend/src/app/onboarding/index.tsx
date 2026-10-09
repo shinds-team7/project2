@@ -1,7 +1,6 @@
-/** 온보딩 0 — 스플래시/시작 화면 (그린 배경 + 흰 로고) */
-import Ionicons from '@expo/vector-icons/Ionicons';
+/** 온보딩 0 — 스플래시/시작 화면 (블루 배경 + 흰 로고 마크) */
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 
 import { T } from '@/components/ui';
 import { useStore } from '@/store/AppStore';
@@ -12,9 +11,7 @@ export default function Welcome() {
   return (
     <View style={styles.wrap}>
       <View style={styles.center}>
-        <View style={styles.logo}>
-          <Ionicons name="wallet" size={46} color={colors.brand} />
-        </View>
+        <Image source={require('../../../assets/brand/mark-white.png')} style={styles.logo} resizeMode="contain" />
         <T size={30} weight="800" color="#fff" style={{ marginTop: 22 }}>
           텅장관리
         </T>
@@ -54,7 +51,7 @@ export default function Welcome() {
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.brand, justifyContent: 'space-between' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  logo: { width: 92, height: 92, borderRadius: 28, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
+  logo: { width: 112, height: 96 },
   bottom: { padding: 20, paddingBottom: 28 },
   start: { height: 56, borderRadius: 16, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center' },
 });
