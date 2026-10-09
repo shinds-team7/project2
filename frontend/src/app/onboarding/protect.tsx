@@ -48,18 +48,18 @@ export default function Protect() {
       {list.map((p) => (
         <View key={p.id} style={styles.row}>
           <Ionicons name="lock-closed" size={18} color={colors.brandDark} />
-          <TextInput
+          <TextInput accessibilityLabel="보호 항목 이름"
             value={p.name}
             onChangeText={(v) => setList(list.map((x) => (x.id === p.id ? { ...x, name: v } : x)))}
             style={[styles.name, noOutline]}
           />
-          <TextInput value={p.amount ? won(p.amount) : ''} onChangeText={(v) => update(p.id, v)} placeholder="0" keyboardType="number-pad" style={[styles.amount, noOutline]} />
+          <TextInput accessibilityLabel="보호 금액" value={p.amount ? won(p.amount) : ''} onChangeText={(v) => update(p.id, v)} placeholder="0" placeholderTextColor={colors.placeholder} keyboardType="number-pad" inputMode="numeric" style={[styles.amount, noOutline]} />
           <T size={15} weight="600">
             원
           </T>
         </View>
       ))}
-      <Pressable style={styles.add} onPress={() => setList([...list, { id: `pr-${Date.now()}`, name: '새 보호 금액', amount: 0 }])}>
+      <Pressable accessibilityRole="button" style={styles.add} onPress={() => setList([...list, { id: `pr-${Date.now()}`, name: '새 보호 금액', amount: 0 }])}>
         <Ionicons name="add" size={18} color={colors.brandDark} />
         <T size={14} weight="600" color={colors.brandDark}>
           보호 금액 추가

@@ -116,6 +116,7 @@ export default function Settle() {
               const c = getCategory(t.category);
               return (
                 <Pressable
+                  accessibilityRole="checkbox" accessibilityState={{ checked: on }}
                   key={t.id}
                   onPress={() => {
                     setNoTx(false);
@@ -135,11 +136,11 @@ export default function Settle() {
                   <T size={14} weight="700">
                     {won(spendOf(t))}원
                   </T>
-                  <Ionicons name={on ? 'checkbox' : 'square-outline'} size={20} color={on ? colors.brand : colors.textFaint} />
+                  <Ionicons name={on ? 'checkbox' : 'square-outline'} size={20} color={on ? colors.brand : colors.placeholder} />
                 </Pressable>
               );
             })}
-            <Pressable onPress={() => setNoTx(!noTx)} style={[styles.tx, noTx && styles.txOn]}>
+            <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: noTx }} onPress={() => setNoTx(!noTx)} style={[styles.tx, noTx && styles.txOn]}>
               <IconCircle name="cash-outline" color={colors.textSub} size={36} />
               <View style={{ flex: 1 }}>
                 <T size={14} weight="600">
@@ -149,17 +150,17 @@ export default function Settle() {
                   다른 사람이 결제했거나 현금으로 냈어요
                 </T>
               </View>
-              <Ionicons name={noTx ? 'checkbox' : 'square-outline'} size={20} color={noTx ? colors.brand : colors.textFaint} />
+              <Ionicons name={noTx ? 'checkbox' : 'square-outline'} size={20} color={noTx ? colors.brand : colors.placeholder} />
             </Pressable>
           </View>
           {noTx && (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 }}>
-              <TextInput
+              <TextInput accessibilityLabel="실제로 낸 금액"
                 value={raw ? won(Number(raw.replace(/[^0-9]/g, '')) || 0) : ''}
                 onChangeText={setRaw}
                 placeholder="실제로 낸 금액 (없으면 0)"
-                placeholderTextColor={colors.textFaint}
-                keyboardType="number-pad"
+                placeholderTextColor={colors.placeholder}
+                keyboardType="number-pad" inputMode="numeric"
                 style={[styles.input, noOutline]}
               />
               <T size={16} weight="600">

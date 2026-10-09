@@ -121,10 +121,10 @@ export default function BudgetDetail() {
 
       <Sheet visible={!!editing} onClose={() => setEditing(null)} title={`${editing?.name ?? ''} 수정`} subtitle="바꾸면 오늘 사용 가능 금액이 바로 다시 계산돼요">
         <View style={styles.amountRow}>
-          <TextInput
+          <TextInput accessibilityLabel="금액"
             value={raw ? won(Number(raw.replace(/[^0-9]/g, '')) || 0) : ''}
             onChangeText={setRaw}
-            keyboardType="number-pad"
+            keyboardType="number-pad" inputMode="numeric"
             style={[styles.input, noOutline]}
           />
           <T size={18} weight="700">
@@ -158,7 +158,7 @@ function Line({
 }) {
   const color = tone === 'warn' ? colors.warn : result ? colors.brandDark : colors.text;
   return (
-    <Pressable onPress={onPress} disabled={!onPress} style={styles.line}>
+    <Pressable accessibilityRole="button" onPress={onPress} disabled={!onPress} style={styles.line}>
       <View style={{ flex: 1 }}>
         <T size={result ? 16 : 15} weight={strong || result ? '700' : '500'} color={result ? colors.brandDark : colors.text}>
           {label}
@@ -186,7 +186,7 @@ function Group({ title, total, onEdit, children }: { title: string; total: numbe
           {title}
         </T>
         {onEdit && (
-          <Pressable onPress={onEdit} hitSlop={8} style={styles.editBtn}>
+          <Pressable accessibilityRole="button" accessibilityLabel={`${title} 수정`} onPress={onEdit} hitSlop={8} style={styles.editBtn}>
             <T size={12} weight="600" color={colors.brandDark}>
               수정
             </T>
@@ -203,7 +203,7 @@ function Group({ title, total, onEdit, children }: { title: string; total: numbe
 
 function Sub({ text, amount, onPress, editable }: { text: string; amount?: number; onPress?: () => void; editable?: boolean }) {
   return (
-    <Pressable onPress={onPress} disabled={!onPress} style={styles.sub}>
+    <Pressable accessibilityRole="button" onPress={onPress} disabled={!onPress} style={styles.sub}>
       <T size={13} color={colors.textMuted} style={{ flex: 1 }} numberOfLines={1}>
         {text}
       </T>
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   group: { paddingVertical: 2 },
   subs: { paddingLeft: 10, borderLeftWidth: 2, borderLeftColor: colors.line, marginLeft: 2, marginBottom: 6 },
   sub: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 4 },
-  editBtn: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: colors.brandSoft },
+  editBtn: { paddingHorizontal: 10, minHeight: 28, justifyContent: 'center', borderRadius: 999, backgroundColor: colors.brandSoft },
   amountRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   input: {
     flex: 1,

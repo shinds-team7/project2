@@ -31,7 +31,7 @@ export function LockScreen({
         </T>
       </View>
 
-      <Pressable style={styles.noti} onPress={onOpen}>
+      <Pressable accessibilityRole="button" style={styles.noti} onPress={onOpen}>
         <View style={styles.head}>
           <Image source={require('../../assets/brand/logo.png')} style={styles.icon} />
           <T size={13} weight="600" color="rgba(255,255,255,0.75)" style={{ flex: 1 }}>

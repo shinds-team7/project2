@@ -27,12 +27,12 @@ export default function Welcome() {
       </View>
 
       <View style={styles.bottom}>
-        <Pressable style={styles.start} onPress={() => router.push('/onboarding/account')}>
+        <Pressable accessibilityRole="button" style={styles.start} onPress={() => router.push('/onboarding/account')}>
           <T size={16} weight="800" color={colors.brandDark}>
             시작하기
           </T>
         </Pressable>
-        <Pressable
+        <Pressable accessibilityRole="button"
           style={{ padding: 14, alignItems: 'center' }}
           onPress={() => {
             completeOnboarding();

@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import type { MemoryItem } from '@/ai/memory';
 import { SubHeader } from '@/components/SubHeader';
+import { useToast } from '@/components/Toast';
 import { Badge, Button, Card, IconCircle, Screen, SectionTitle, Sheet, T } from '@/components/ui';
 import { getCategory } from '@/data/categories';
 import { useStore } from '@/store/AppStore';
@@ -12,7 +13,8 @@ import { colors, font, noOutline } from '@/theme';
 import { won } from '@/utils/format';
 
 export default function Memory() {
-  const { memory, updateMemory, insights, removeInsight } = useStore();
+  const { memory, updateMemory, insights, removeInsight, restoreInsight } = useStore();
+  const toast = useToast();
   const [editing, setEditing] = useState<MemoryItem | null>(null);
   const [raw, setRaw] = useState('');
   const amount = Number(raw.replace(/[^0-9]/g, '')) || 0;
@@ -39,7 +41,7 @@ export default function Memory() {
             {memory.map((m) => {
               const c = getCategory(m.category);
               return (
-                <Pressable
+                <Pressable accessibilityRole="button"
                   key={m.id}
                   style={styles.row}
                   onPress={() => {
@@ -82,7 +84,16 @@ export default function Memory() {
                     근거: {i.source}
                   </T>
                 </View>
-                <Pressable onPress={() => removeInsight(i.id)} hitSlop={8} style={styles.forget}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`‘${i.text}’ 습관 잊기`}
+                  onPress={() => {
+                    removeInsight(i.id);
+                    toast('습관을 잊었어요', () => restoreInsight(i));
+                  }}
+                  hitSlop={8}
+                  style={styles.forget}
+                >
                   <T size={12} weight="600" color={colors.textMuted}>
                     잊기
                   </T>
@@ -100,7 +111,7 @@ export default function Memory() {
 
       <Sheet visible={!!editing} onClose={() => setEditing(null)} title={`${editing?.label ?? ''} 금액 수정`} subtitle="다음 예정 지출부터 이 금액으로 제안해요">
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <TextInput value={amount ? won(amount) : ''} onChangeText={setRaw} keyboardType="number-pad" style={[styles.input, noOutline]} />
+          <TextInput accessibilityLabel="금액" value={amount ? won(amount) : ''} onChangeText={setRaw} keyboardType="number-pad" inputMode="numeric" style={[styles.input, noOutline]} />
           <T size={18} weight="700">
             원
           </T>
@@ -122,6 +133,6 @@ export default function Memory() {
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 9 },
   insight: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: colors.bg, borderRadius: 14, padding: 14 },
-  forget: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, backgroundColor: '#fff' },
+  forget: { paddingHorizontal: 12, minHeight: 32, justifyContent: 'center', borderRadius: 999, backgroundColor: '#fff' },
   input: { flex: 1, height: 54, borderRadius: 14, backgroundColor: colors.bg, paddingHorizontal: 14, fontSize: 20, fontWeight: '700', textAlign: 'right', color: colors.text, fontFamily: font },
 });

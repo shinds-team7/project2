@@ -46,13 +46,13 @@ export default function Transactions() {
 
       <Card>
         <View style={styles.monthRow}>
-          <Pressable onPress={() => setMonth(-1)} disabled={month === -1} hitSlop={10}>
+          <Pressable accessibilityRole="button" accessibilityLabel="이전 달" accessibilityState={{ disabled: month === -1 }} onPress={() => setMonth(-1)} disabled={month === -1} hitSlop={10}>
             <Ionicons name="chevron-back" size={20} color={month === -1 ? colors.textFaint : colors.text} />
           </Pressable>
           <T size={17} weight="800">
             {base.getFullYear()}년 {base.getMonth() + 1}월
           </T>
-          <Pressable onPress={() => setMonth(0)} disabled={month === 0} hitSlop={10}>
+          <Pressable accessibilityRole="button" accessibilityLabel="다음 달" accessibilityState={{ disabled: month === 0 }} onPress={() => setMonth(0)} disabled={month === 0} hitSlop={10}>
             <Ionicons name="chevron-forward" size={20} color={month === 0 ? colors.textFaint : colors.text} />
           </Pressable>
         </View>
@@ -90,7 +90,7 @@ export default function Transactions() {
             ['in', '수입'],
           ] as [Filter, string][]
         ).map(([k, l]) => (
-          <Pressable key={k} onPress={() => setFilter(k)} style={[styles.chip, filter === k && styles.chipOn]}>
+          <Pressable accessibilityRole="tab" accessibilityState={{ selected: filter === k }} key={k} onPress={() => setFilter(k)} style={[styles.chip, filter === k && styles.chipOn]}>
             <T size={13} weight="600" color={filter === k ? '#fff' : colors.textSub}>
               {l}
             </T>
@@ -123,7 +123,7 @@ export default function Transactions() {
                 const income = t.amount > 0;
                 const split = t.splitN && t.splitN > 1 ? t.splitN : 0;
                 return (
-                  <Pressable key={t.id} style={styles.tx} onPress={() => router.push(`/tx/${t.id}`)}>
+                  <Pressable accessibilityRole="button" key={t.id} style={styles.tx} onPress={() => router.push(`/tx/${t.id}`)}>
                     <IconCircle name={c.icon} color={c.color} size={40} />
                     <View style={{ flex: 1, gap: 2 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -141,7 +141,7 @@ export default function Transactions() {
                       <T
                         size={15}
                         weight="700"
-                        color={income ? colors.info : t.excluded ? colors.textFaint : colors.text}
+                        color={income ? colors.info : t.excluded ? colors.textMuted : colors.text}
                         style={t.excluded || split ? { textDecorationLine: 'line-through' } : undefined}
                       >
                         {income ? '+' : ''}
@@ -170,8 +170,8 @@ const styles = StyleSheet.create({
   sum: { flex: 1, alignItems: 'center', gap: 4 },
   accounts: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 12, justifyContent: 'center' },
   filters: { flexDirection: 'row', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, backgroundColor: '#fff' },
-  chipOn: { backgroundColor: colors.text },
+  chip: { paddingHorizontal: 16, minHeight: 36, justifyContent: 'center', borderRadius: 999, backgroundColor: '#fff' },
+  chipOn: { backgroundColor: colors.brand },
   groupGap: { borderTopWidth: 1, borderTopColor: colors.line, marginTop: 6 },
   groupHead: { flexDirection: 'row', justifyContent: 'space-between', paddingTop: 14, paddingBottom: 6 },
   tx: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },

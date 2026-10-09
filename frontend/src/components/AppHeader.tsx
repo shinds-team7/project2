@@ -27,7 +27,7 @@ export function AppHeader() {
   return (
     <View style={styles.wrap}>
       <View style={styles.top}>
-        <Pressable style={styles.brand} onPress={() => router.navigate(homeHref)}>
+        <Pressable style={styles.brand} onPress={() => router.navigate(homeHref)} accessibilityRole="link" accessibilityLabel="텅장관리 홈">
           <Logo />
           <T size={18} weight="800">
             텅장관리
@@ -36,20 +36,31 @@ export function AppHeader() {
             flex-able
           </T>
         </Pressable>
-        <Pressable style={styles.actions} onPress={() => router.push('/notifications')} hitSlop={8}>
+        <Pressable
+          style={({ pressed }) => [styles.actions, pressed && { backgroundColor: colors.sunken }]}
+          onPress={() => router.push('/notifications')}
+          accessibilityRole="button"
+          accessibilityLabel={pendingCount > 0 ? `알림, 확인할 일 ${pendingCount}건` : '알림'}
+        >
           <Ionicons name="notifications-outline" size={22} color={colors.textSub} />
           {pendingCount > 0 && <View style={styles.dot} />}
         </Pressable>
       </View>
-      <View style={styles.nav}>
+      <View style={styles.nav} accessibilityRole="tablist">
         {TABS.map((t) => {
           const on = t.match(pathname);
           return (
-            <Pressable key={t.href} style={styles.tab} onPress={() => router.navigate(t.href === '/' ? homeHref : t.href)}>
-              <T size={15} weight={on ? '700' : '500'} color={on ? colors.text : colors.textMuted}>
+            <Pressable
+              key={t.href}
+              style={styles.tab}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: on }}
+              onPress={() => router.navigate(t.href === '/' ? homeHref : t.href)}
+            >
+              <T size={15} weight={on ? '700' : '500'} color={on ? colors.text : colors.textMuted} numberOfLines={1}>
                 {t.label}
               </T>
-              <View style={[styles.indicator, on && { backgroundColor: colors.text }]} />
+              <View style={[styles.indicator, on && { backgroundColor: colors.brand }]} />
             </Pressable>
           );
         })}
@@ -62,9 +73,9 @@ const styles = StyleSheet.create({
   wrap: { backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: colors.line },
   top: { height: 56, paddingHorizontal: 18, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   brand: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  actions: { flexDirection: 'row', gap: 14 },
-  dot: { position: 'absolute', top: 0, right: 0, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger, borderWidth: 1.5, borderColor: '#fff' },
+  actions: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: -10 },
+  dot: { position: 'absolute', top: 10, right: 11, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.danger, borderWidth: 1.5, borderColor: '#fff' },
   nav: { flexDirection: 'row', paddingHorizontal: 8 },
-  tab: { flex: 1, alignItems: 'center', paddingTop: 6 },
-  indicator: { height: 2.5, width: 36, borderRadius: 2, marginTop: 9, backgroundColor: 'transparent' },
+  tab: { flex: 1, alignItems: 'center', paddingTop: 8, minHeight: 44 },
+  indicator: { height: 3, width: 28, borderRadius: 2, marginTop: 9, backgroundColor: 'transparent' },
 });

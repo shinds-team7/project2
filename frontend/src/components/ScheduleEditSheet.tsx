@@ -6,11 +6,13 @@ import { useStore } from '@/store/AppStore';
 import { colors, font, noOutline } from '@/theme';
 import { addDays, fromKey, isSameDay, toKey } from '@/utils/date';
 import { DOW, won } from '@/utils/format';
+import { useToast } from './Toast';
 import { Button, Sheet, T } from './ui';
 
 /** 예정 지출 수정/삭제 시트 (제목·날짜·금액) */
 export function ScheduleEditSheet({ item, onClose }: { item: ScheduledSpend | null; onClose: () => void }) {
-  const { today, updateScheduled, removeScheduled } = useStore();
+  const { today, updateScheduled, removeScheduled, restoreScheduled } = useStore();
+  const toast = useToast();
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(toKey(today));
   const [raw, setRaw] = useState('');
@@ -44,7 +46,7 @@ export function ScheduleEditSheet({ item, onClose }: { item: ScheduledSpend | nu
       <T size={13} weight="600" color={colors.textSub} style={styles.label}>
         무엇을
       </T>
-      <TextInput value={title} onChangeText={setTitle} style={[styles.input, noOutline]} />
+      <TextInput accessibilityLabel="무엇을" value={title} onChangeText={setTitle} style={[styles.input, noOutline]} />
 
       <T size={13} weight="600" color={colors.textSub} style={styles.label}>
         언제
@@ -53,7 +55,7 @@ export function ScheduleEditSheet({ item, onClose }: { item: ScheduledSpend | nu
         {days.map((d) => {
           const on = toKey(d) === date;
           return (
-            <Pressable key={toKey(d)} onPress={() => setDate(toKey(d))} style={[styles.day, on && styles.dayOn]}>
+            <Pressable accessibilityRole="radio" accessibilityState={{ selected: on }} key={toKey(d)} onPress={() => setDate(toKey(d))} style={[styles.day, on && styles.dayOn]}>
               <T size={11} color={on ? '#fff' : colors.textMuted}>
                 {isSameDay(d, today) ? '오늘' : DOW[d.getDay()]}
               </T>
@@ -72,12 +74,12 @@ export function ScheduleEditSheet({ item, onClose }: { item: ScheduledSpend | nu
         예상 금액 (본인 부담)
       </T>
       <View style={styles.amountRow}>
-        <TextInput
+        <TextInput accessibilityLabel="예상 금액"
           value={amount ? won(amount) : ''}
           onChangeText={setRaw}
-          keyboardType="number-pad"
+          keyboardType="number-pad" inputMode="numeric"
           placeholder="0"
-          placeholderTextColor={colors.textFaint}
+          placeholderTextColor={colors.placeholder}
           style={[styles.input, noOutline, { flex: 1, minWidth: 0, textAlign: 'right' }]}
         />
         <T size={16} weight="600">
@@ -91,7 +93,10 @@ export function ScheduleEditSheet({ item, onClose }: { item: ScheduledSpend | nu
           variant="soft"
           style={{ flex: 1 }}
           onPress={() => {
-            if (item) removeScheduled(item.id);
+            if (item) {
+              removeScheduled(item.id);
+              toast(`‘${item.title}’ 일정을 삭제했어요`, () => restoreScheduled(item));
+            }
             onClose();
           }}
         />

@@ -12,7 +12,7 @@ import { colors } from '@/theme';
 import { diffDays } from '@/utils/date';
 import { TodayHeroCard } from './HomeContent';
 import { TierBadge } from './TierBadge';
-import { T } from './ui';
+import { T, useReducedMotion } from './ui';
 
 type Level = 1 | 2 | 3 | 4 | 5;
 
@@ -20,21 +20,21 @@ type Level = 1 | 2 | 3 | 4 | 5;
 const LEVELS: Record<Level, { img: ImageSourcePropType; name: string; msg: string; bg: string; accent: string }> = {
   1: {
     img: require('../../assets/characters/lv1.png'),
-    name: '광부냥',
+    name: '텅장 광부냥',
     msg: '예산 초과! 오늘은 한도 안에서만 써요',
-    bg: '#EEF2FA',
+    bg: '#F3F5F9',
     accent: '#667085',
   },
   2: {
     img: require('../../assets/characters/lv2.png'),
-    name: '백수냥',
+    name: '츄리닝 백수냥',
     msg: '이번 주 빠듯해요. 카페 한 번만 줄여요',
-    bg: '#EEF2FA',
+    bg: '#F5F3EE',
     accent: '#8A6A3B',
   },
   3: {
     img: require('../../assets/characters/lv3.png'),
-    name: '직장냥',
+    name: '월급 기다리는 직장냥',
     msg: '잘 버티는 중! 오늘 한도만 지키면 돼요',
     bg: '#EEF2FA',
     accent: '#1D3A8A',
@@ -43,14 +43,14 @@ const LEVELS: Record<Level, { img: ImageSourcePropType; name: string; msg: strin
     img: require('../../assets/characters/lv4.png'),
     name: '플렉스냥',
     msg: '예산을 잘 지키고 있어요. 이 정도면 플렉스 가능!',
-    bg: '#EEF2FA',
+    bg: '#FDF1F1',
     accent: '#A11D2B',
   },
   5: {
     img: require('../../assets/characters/lv5.png'),
-    name: '킹냥',
+    name: '텅장 탈출 킹냥',
     msg: '완벽해요! 예산 관리의 왕이에요',
-    bg: '#EEF2FA',
+    bg: '#FFF8E1',
     accent: '#B7791F',
   },
 };
@@ -74,16 +74,22 @@ export function CharacterHero() {
   const [level, setLevel] = useState<Level>(auto);
   useEffect(() => setLevel(auto), [auto]);
 
+  // 캐릭터 전환: 누른 방향에서 살짝 밀려 들어오며 커진다 (과한 바운스 없이)
   const scale = useRef(new Animated.Value(1)).current;
-  const bump = () => {
-    scale.setValue(0.85);
-    Animated.spring(scale, { toValue: 1, friction: 4, tension: 120, useNativeDriver: Platform.OS !== 'web' }).start();
+  const shift = useRef(new Animated.Value(0)).current;
+  const reduced = useReducedMotion();
+  const bump = (d: -1 | 1) => {
+    if (reduced) return;
+    scale.setValue(0.94);
+    shift.setValue(d * 18);
+    const cfg = { toValue: 1, friction: 8, tension: 140, useNativeDriver: Platform.OS !== 'web' };
+    Animated.parallel([Animated.spring(scale, cfg), Animated.spring(shift, { ...cfg, toValue: 0 })]).start();
   };
   const change = (d: -1 | 1) => {
     const next = Math.min(5, Math.max(1, level + d)) as Level;
     if (next === level) return;
     setLevel(next);
-    bump();
+    bump(d);
   };
 
   const L = LEVELS[level];
@@ -107,13 +113,13 @@ export function CharacterHero() {
       </View>
 
       <View style={styles.stage}>
-        <Pressable onPress={() => change(-1)} disabled={level === 1} hitSlop={12} style={[styles.arrow, level === 1 && { opacity: 0 }]}>
+        <Pressable accessibilityRole="button" accessibilityLabel="이전 단계 캐릭터" accessibilityElementsHidden={level === 1} importantForAccessibility={level === 1 ? 'no-hide-descendants' : 'auto'} onPress={() => change(-1)} disabled={level === 1} hitSlop={12} style={[styles.arrow, level === 1 && { opacity: 0 }]}>
           <Ionicons name="chevron-back" size={22} color={colors.text} />
         </Pressable>
-        <Animated.View style={{ transform: [{ scale }] }}>
+        <Animated.View style={{ transform: [{ translateX: shift }, { scale }] }}>
           <Image source={L.img} style={styles.char} resizeMode="contain" />
         </Animated.View>
-        <Pressable onPress={() => change(1)} disabled={level === 5} hitSlop={12} style={[styles.arrow, level === 5 && { opacity: 0 }]}>
+        <Pressable accessibilityRole="button" accessibilityLabel="다음 단계 캐릭터" accessibilityElementsHidden={level === 5} importantForAccessibility={level === 5 ? 'no-hide-descendants' : 'auto'} onPress={() => change(1)} disabled={level === 5} hitSlop={12} style={[styles.arrow, level === 5 && { opacity: 0 }]}>
           <Ionicons name="chevron-forward" size={22} color={colors.text} />
         </Pressable>
       </View>

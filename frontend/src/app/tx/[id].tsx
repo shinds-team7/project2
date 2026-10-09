@@ -55,7 +55,7 @@ export default function TxDetail() {
           <T
             size={30}
             weight="800"
-            color={tx.excluded ? colors.textFaint : isOut ? colors.text : colors.info}
+            color={tx.excluded ? colors.textMuted : isOut ? colors.text : colors.info}
             style={[{ marginTop: 4 }, tx.excluded || split ? { textDecorationLine: 'line-through' } : null]}
           >
             {isOut ? '' : '+'}
@@ -115,13 +115,13 @@ export default function TxDetail() {
 
       <Sheet visible={splitOpen} onClose={() => setSplitOpen(false)} title="1/N 나누기" subtitle="몇 명이서 나눠 내나요? 나머지는 돌려받을 돈으로 처리해요">
         <View style={styles.stepper}>
-          <Pressable style={styles.stepBtn} onPress={() => setN(Math.max(2, n - 1))}>
+          <Pressable accessibilityRole="button" accessibilityLabel="인원 줄이기" style={styles.stepBtn} onPress={() => setN(Math.max(2, n - 1))}>
             <Ionicons name="remove" size={22} color={colors.text} />
           </Pressable>
           <T size={28} weight="800" style={{ flex: 1, textAlign: 'center' }}>
             {n}명
           </T>
-          <Pressable style={styles.stepBtn} onPress={() => setN(Math.min(20, n + 1))}>
+          <Pressable accessibilityRole="button" accessibilityLabel="인원 늘리기" style={styles.stepBtn} onPress={() => setN(Math.min(20, n + 1))}>
             <Ionicons name="add" size={22} color={colors.text} />
           </Pressable>
         </View>

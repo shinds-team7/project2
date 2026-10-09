@@ -86,12 +86,12 @@ export default function Plan() {
         </T>
 
         <View style={styles.amountBox}>
-          <TextInput
+          <TextInput accessibilityLabel="큰 지출 금액"
             value={amount ? won(amount) : ''}
             onChangeText={setRaw}
             placeholder="금액 입력"
-            keyboardType="number-pad"
-            placeholderTextColor={colors.textFaint}
+            keyboardType="number-pad" inputMode="numeric"
+            placeholderTextColor={colors.placeholder}
             style={[styles.amountInput, noOutline]}
           />
           <T size={24} weight="700">
@@ -100,14 +100,14 @@ export default function Plan() {
         </View>
         <View style={styles.quick}>
           {QUICK.map((q) => (
-            <Pressable key={q.v} onPress={() => setRaw(String(amount + q.v))} style={styles.quickChip}>
+            <Pressable accessibilityRole="button" key={q.v} onPress={() => setRaw(String(amount + q.v))} style={styles.quickChip}>
               <T size={13} weight="600" color={colors.textSub}>
                 {q.label}
               </T>
             </Pressable>
           ))}
           {amount > 0 && (
-            <Pressable onPress={() => setRaw('')} style={styles.quickChip}>
+            <Pressable accessibilityRole="button" onPress={() => setRaw('')} style={styles.quickChip}>
               <T size={13} weight="600" color={colors.textMuted}>
                 초기화
               </T>
@@ -190,7 +190,7 @@ export default function Plan() {
             </T>
 
             {!isRec && (
-              <Pressable style={styles.recLink} onPress={() => setSelected(recommended)}>
+              <Pressable accessibilityRole="button" style={styles.recLink} onPress={() => setSelected(recommended)}>
                 <Ionicons name="bulb-outline" size={16} color={colors.brandDark} />
                 <T size={13} weight="600" color={colors.brandDark} style={{ flex: 1 }}>
                   AI 추천은 {weekLabel(recommended)}이에요 · 추천 주로 이동
@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   quick: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 },
-  quickChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, backgroundColor: colors.bg },
+  quickChip: { paddingHorizontal: 14, minHeight: 36, justifyContent: 'center', borderRadius: 999, backgroundColor: colors.sunken },
   titleInput: {
     marginTop: 16,
     height: 48,

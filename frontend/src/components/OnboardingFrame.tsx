@@ -32,7 +32,7 @@ export function OnboardingFrame({
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <View style={styles.top}>
-        <Pressable onPress={() => goBack(editMode ? '/my' : '/onboarding')} hitSlop={10}>
+        <Pressable accessibilityRole="button" accessibilityLabel="뒤로 가기" onPress={() => goBack(editMode ? '/my' : '/onboarding')} hitSlop={10}>
           <Ionicons name="chevron-back" size={24} color={colors.text} />
         </Pressable>
         {editMode ? (

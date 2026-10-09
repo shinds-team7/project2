@@ -47,7 +47,7 @@ export default function Analyze() {
               ) : (
                 <Ionicons name="ellipse-outline" size={22} color={colors.textFaint} />
               )}
-              <T size={15} weight={i === step ? '700' : '500'} color={i <= step ? colors.text : colors.textFaint}>
+              <T size={15} weight={i === step ? '700' : '500'} color={i <= step ? colors.text : colors.textMuted}>
                 {s}
               </T>
             </View>

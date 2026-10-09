@@ -1,7 +1,10 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import type { ComponentProps, ReactNode } from 'react';
+import { useEffect, useRef, useState, type ComponentProps, type ReactNode } from 'react';
 import {
+  AccessibilityInfo,
+  Animated,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,32 +16,90 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, font, radius, shadow } from '@/theme';
+import { colors, floating, font, motion, pressed as pressedFx, pressTransition, radius } from '@/theme';
 
 type TProps = TextProps & {
   size?: number;
   weight?: '400' | '500' | '600' | '700' | '800';
   color?: string;
+  /** 금액·숫자: 자릿수 정렬(tabular-nums) */
+  num?: boolean;
 };
 
-export function T({ size = 15, weight = '400', color = colors.text, style, ...rest }: TProps) {
+export function T({ size = 15, weight = '400', color = colors.text, num, style, ...rest }: TProps) {
   return (
     <RNText
       {...rest}
-      style={[{ fontSize: size, fontWeight: weight, color, fontFamily: font, letterSpacing: -0.2 }, style]}
+      style={[
+        {
+          fontSize: size,
+          fontWeight: weight,
+          color,
+          fontFamily: font,
+          // 큰 글씨일수록 자간을 조금 더 좁힌다
+          letterSpacing: size >= 28 ? -0.8 : size >= 20 ? -0.4 : -0.2,
+        },
+        num && { fontVariant: ['tabular-nums'] },
+        style,
+      ]}
     />
   );
+}
+
+/** 접근성: OS의 '동작 줄이기' 설정 */
+export function useReducedMotion() {
+  const [reduced, setReduced] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    AccessibilityInfo.isReduceMotionEnabled?.().then((v) => alive && setReduced(!!v)).catch(() => {});
+    const sub = AccessibilityInfo.addEventListener?.('reduceMotionChanged', (v: boolean) => setReduced(v));
+    return () => {
+      alive = false;
+      sub?.remove?.();
+    };
+  }, []);
+  return reduced;
+}
+
+/** 숫자가 바뀔 때만(첫 렌더 제외) 짧게 굴러가는 금액 — 결제 반영 순간을 보여준다 */
+export function useRollingNumber(value: number) {
+  const reduced = useReducedMotion();
+  const [shown, setShown] = useState(value);
+  const prev = useRef(value);
+  useEffect(() => {
+    const from = prev.current;
+    prev.current = value;
+    if (from === value || reduced) {
+      setShown(value);
+      return;
+    }
+    const start = Date.now();
+    let raf = 0;
+    const tick = () => {
+      const t = Math.min(1, (Date.now() - start) / motion.number);
+      const e = 1 - Math.pow(1 - t, 3);
+      setShown(Math.round(from + (value - from) * e));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value, reduced]);
+  return shown;
 }
 
 export function Card({ children, style, onPress }: { children: ReactNode; style?: StyleProp<ViewStyle>; onPress?: () => void }) {
   if (onPress) {
     return (
-      <Pressable onPress={onPress} style={({ pressed }) => [styles.card, shadow, pressed && styles.pressed, style]}>
+      <Pressable
+        accessibilityRole="button"
+        onPress={onPress}
+        style={({ pressed }) => [styles.card, pressTransition, pressed && styles.cardPressed, style]}
+      >
         {children}
       </Pressable>
     );
   }
-  return <View style={[styles.card, shadow, style]}>{children}</View>;
+  return <View style={[styles.card, style]}>{children}</View>;
 }
 
 export function Screen({ children }: { children: ReactNode }) {
@@ -52,7 +113,7 @@ export function Screen({ children }: { children: ReactNode }) {
 export function SectionTitle({ title, right }: { title: string; right?: ReactNode }) {
   return (
     <View style={styles.sectionTitle}>
-      <T size={17} weight="700">
+      <T size={17} weight="700" accessibilityRole="header">
         {title}
       </T>
       {right}
@@ -72,17 +133,21 @@ export function Button({ label, variant = 'primary', icon, style, disabled, ...r
   const fg = variant === 'primary' ? '#fff' : colors.brandDark;
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
       {...rest}
       disabled={disabled}
       style={({ pressed }) => [
         styles.btn,
-        { backgroundColor: disabled ? '#D0D5DD' : bg },
-        pressed && styles.pressed,
+        pressTransition,
+        { backgroundColor: disabled ? colors.sunken : bg },
+        pressed && (variant === 'primary' ? styles.btnPrimaryPressed : styles.pressed),
         style,
       ]}
     >
-      {icon && <Ionicons name={icon} size={18} color={disabled ? '#fff' : fg} />}
-      <T size={16} weight="700" color={disabled ? '#fff' : fg}>
+      {icon && <Ionicons name={icon} size={18} color={disabled ? colors.textFaint : fg} />}
+      <T size={16} weight="700" color={disabled ? colors.textMuted : fg} numberOfLines={1}>
         {label}
       </T>
     </Pressable>
@@ -92,7 +157,12 @@ export function Button({ label, variant = 'primary', icon, style, disabled, ...r
 /** 점선 테두리 + 버튼 (일정/계획 추가용) */
 export function AddButton({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.add, pressed && styles.pressed]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={({ pressed }) => [styles.add, pressTransition, pressed && styles.pressed]}
+    >
       <Ionicons name="add" size={20} color={colors.brandDark} />
       <T size={14} weight="600" color={colors.brandDark}>
         {label}
@@ -152,7 +222,13 @@ export function Segment<K extends string>({
       {items.map((it) => {
         const on = it.key === value;
         return (
-          <Pressable key={it.key} onPress={() => onChange(it.key)} style={[styles.segItem, on && styles.segOn]}>
+          <Pressable
+            key={it.key}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            onPress={() => onChange(it.key)}
+            style={[styles.segItem, pressTransition, on && styles.segOn]}
+          >
             <T size={14} weight={on ? '700' : '500'} color={on ? colors.text : colors.textMuted}>
               {it.label}
             </T>
@@ -163,7 +239,7 @@ export function Segment<K extends string>({
   );
 }
 
-/** 하단 시트 모달 */
+/** 하단 시트 모달 — 바닥에서 ease-out으로 올라오고, 닫힐 땐 더 빠르게 내려간다 */
 export function Sheet({
   visible,
   onClose,
@@ -177,25 +253,56 @@ export function Sheet({
   subtitle?: string;
   children: ReactNode;
 }) {
+  const reduced = useReducedMotion();
+  const [mounted, setMounted] = useState(visible);
+  const p = useRef(new Animated.Value(0)).current;
+  const native = Platform.OS !== 'web';
+
+  useEffect(() => {
+    if (visible) {
+      setMounted(true);
+      p.setValue(0);
+      Animated.timing(p, {
+        toValue: 1,
+        duration: reduced ? 0 : motion.enter,
+        easing: motion.easeOut,
+        useNativeDriver: native,
+      }).start();
+    } else if (mounted) {
+      Animated.timing(p, {
+        toValue: 0,
+        duration: reduced ? 0 : motion.exit,
+        easing: motion.easeOut,
+        useNativeDriver: native,
+      }).start(() => setMounted(false));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible]);
+
+  const translateY = p.interpolate({ inputRange: [0, 1], outputRange: [420, 0] });
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable style={styles.dim} onPress={onClose}>
-        <Pressable style={styles.sheet} onPress={() => {}}>
-          <View style={styles.sheetHead}>
-            <T size={19} weight="700" style={{ flex: 1 }}>
-              {title}
-            </T>
-            <Pressable onPress={onClose} hitSlop={10}>
-              <Ionicons name="close" size={24} color={colors.textMuted} />
-            </Pressable>
-          </View>
-          {subtitle && (
-            <T size={13} color={colors.textMuted} style={{ marginTop: 4 }}>
-              {subtitle}
-            </T>
-          )}
-          <View style={{ marginTop: 18 }}>{children}</View>
-        </Pressable>
+    <Modal visible={mounted} transparent animationType="none" onRequestClose={onClose}>
+      <Animated.View style={[StyleSheet.absoluteFill, styles.dimBg, { opacity: p }]} />
+      <Pressable style={styles.dim} onPress={onClose} accessibilityLabel="닫기" accessibilityRole="button">
+        <Animated.View style={[styles.sheet, floating, { transform: [{ translateY }] }]}>
+          <Pressable onPress={() => {}} accessible={false} style={{ cursor: 'auto' } as object}>
+            <View style={styles.grabber} />
+            <View style={styles.sheetHead}>
+              <T size={19} weight="700" style={{ flex: 1 }} accessibilityRole="header">
+                {title}
+              </T>
+              <Pressable onPress={onClose} hitSlop={12} accessibilityRole="button" accessibilityLabel="닫기" style={styles.close}>
+                <Ionicons name="close" size={22} color={colors.textSub} />
+              </Pressable>
+            </View>
+            {subtitle && (
+              <T size={13} color={colors.textMuted} style={{ marginTop: 4, lineHeight: 19 }}>
+                {subtitle}
+              </T>
+            )}
+            <View style={{ marginTop: 18 }}>{children}</View>
+          </Pressable>
+        </Animated.View>
       </Pressable>
     </Modal>
   );
@@ -221,9 +328,9 @@ export function ConfirmModal({
 }) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
-      <View style={[styles.dim, { justifyContent: 'center', padding: 28 }]}>
-        <View style={styles.dialog}>
-          <T size={18} weight="700">
+      <View style={[styles.dim, styles.dimBg, { justifyContent: 'center', padding: 28 }]}>
+        <View style={[styles.dialog, floating]} accessibilityViewIsModal>
+          <T size={18} weight="700" accessibilityRole="header">
             {title}
           </T>
           <View style={{ marginTop: 10 }}>
@@ -247,8 +354,14 @@ export function ConfirmModal({
 
 export function Chip({ label, on, onPress }: { label: string; on?: boolean; onPress?: () => void }) {
   return (
-    <Pressable onPress={onPress} style={[styles.chip, on && styles.chipOn]}>
-      <T size={13} weight="600" color={on ? '#fff' : colors.textSub}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: !!on }}
+      onPress={onPress}
+      hitSlop={4}
+      style={({ pressed }) => [styles.chip, pressTransition, on && styles.chipOn, pressed && pressedFx]}
+    >
+      <T size={13} weight="600" color={on ? colors.onBrand : colors.textSub} numberOfLines={1}>
         {label}
       </T>
     </Pressable>
@@ -260,23 +373,28 @@ export function Row({ children, style }: { children: ReactNode; style?: StylePro
 }
 
 export const styles = StyleSheet.create({
-  dim: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end', alignItems: 'center' },
+  dim: { flex: 1, justifyContent: 'flex-end', alignItems: 'center' },
+  dimBg: { backgroundColor: 'rgba(16,26,51,0.45)' },
+  grabber: { alignSelf: 'center', width: 36, height: 4, borderRadius: 2, backgroundColor: colors.line, marginTop: -8, marginBottom: 14 },
+  close: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.sunken },
   sheet: {
     width: '100%',
     maxWidth: 440,
     backgroundColor: '#fff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
     padding: 22,
     paddingBottom: 34,
   },
   sheetHead: { flexDirection: 'row', alignItems: 'center' },
-  dialog: { width: '100%', maxWidth: 360, backgroundColor: '#fff', borderRadius: 22, padding: 22, alignSelf: 'center' },
-  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: colors.bg },
-  chipOn: { backgroundColor: colors.text },
+  dialog: { width: '100%', maxWidth: 360, backgroundColor: '#fff', borderRadius: radius.xl - 4, padding: 22, alignSelf: 'center' },
+  chip: { minHeight: 36, justifyContent: 'center', paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: colors.sunken },
+  chipOn: { backgroundColor: colors.brand },
   screen: { padding: 16, paddingBottom: 48, gap: 12 },
   card: { backgroundColor: colors.card, borderRadius: radius.lg, padding: 20 },
-  pressed: { opacity: 0.75, transform: [{ scale: 0.99 }] },
+  pressed: { transform: [{ scale: 0.97 }], opacity: 0.85 },
+  cardPressed: { transform: [{ scale: 0.985 }], backgroundColor: colors.brandSofter },
+  btnPrimaryPressed: { transform: [{ scale: 0.97 }], backgroundColor: colors.brandDark },
   sectionTitle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 },
   btn: {
     height: 54,
@@ -289,9 +407,6 @@ export const styles = StyleSheet.create({
   add: {
     height: 48,
     borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: colors.brandBorder,
     backgroundColor: colors.brandSofter,
     flexDirection: 'row',
     alignItems: 'center',
@@ -299,7 +414,7 @@ export const styles = StyleSheet.create({
     gap: 4,
   },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: radius.pill, alignSelf: 'flex-start' },
-  segment: { flexDirection: 'row', backgroundColor: '#E9ECEF', borderRadius: 12, padding: 4 },
-  segItem: { flex: 1, height: 36, alignItems: 'center', justifyContent: 'center', borderRadius: 9 },
-  segOn: { backgroundColor: '#fff' },
+  segment: { flexDirection: 'row', backgroundColor: colors.sunken, borderRadius: radius.sm, padding: 4 },
+  segItem: { flex: 1, height: 38, alignItems: 'center', justifyContent: 'center', borderRadius: radius.xs },
+  segOn: { backgroundColor: '#fff', ...(Platform.OS === 'web' ? ({ boxShadow: '0 1px 3px rgba(16,26,51,0.10)' } as object) : {}) },
 });

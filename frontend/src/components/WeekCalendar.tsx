@@ -52,10 +52,10 @@ export function WeekCalendar({ today, selectedWeek, selectedStatus, isRecommende
           </View>
         </View>
         <View style={styles.arrows}>
-          <Pressable onPress={onPrev} disabled={!canPrev} style={[styles.arrow, !canPrev && { opacity: 0.35 }]}>
+          <Pressable accessibilityRole="button" accessibilityLabel="이전 달" accessibilityState={{ disabled: !canPrev }} hitSlop={4} onPress={onPrev} disabled={!canPrev} style={[styles.arrow, !canPrev && { opacity: 0.35 }]}>
             <Ionicons name="chevron-back" size={18} color={colors.text} />
           </Pressable>
-          <Pressable onPress={onNext} style={styles.arrow}>
+          <Pressable accessibilityRole="button" accessibilityLabel="다음 달" hitSlop={4} onPress={onNext} style={styles.arrow}>
             <Ionicons name="chevron-forward" size={18} color={colors.text} />
           </Pressable>
         </View>
@@ -76,6 +76,9 @@ export function WeekCalendar({ today, selectedWeek, selectedStatus, isRecommende
         const past = ws < minWeek;
         return (
           <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={`${weekLabel(ws)}${isSel ? `, ${meta.label}` : ""}`}
+            accessibilityState={{ selected: isSel, disabled: past }}
             key={toKey(ws)}
             disabled={past}
             onPress={() => onSelectWeek(ws)}
@@ -115,7 +118,7 @@ export function WeekCalendar({ today, selectedWeek, selectedStatus, isRecommende
           </View>
         ))}
       </View>
-      <T size={11} color={colors.textFaint} style={{ textAlign: 'center', marginTop: 6 }}>
+      <T size={11} color={colors.textMuted} style={{ textAlign: 'center', marginTop: 6 }}>
         다른 주를 누르면 그 주의 추천 정도를 색으로 보여줘요
       </T>
     </View>
