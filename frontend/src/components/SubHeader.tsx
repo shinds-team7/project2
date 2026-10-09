@@ -15,7 +15,7 @@ export function goBack(fallback: Href = '/') {
 export function SubHeader({ title, right, fallback }: { title: string; right?: ReactNode; fallback?: Href }) {
   return (
     <View style={styles.wrap}>
-      <Pressable onPress={() => goBack(fallback)} hitSlop={10} style={styles.side}>
+      <Pressable accessibilityRole="button" accessibilityLabel="뒤로 가기" onPress={() => goBack(fallback)} hitSlop={10} style={styles.side}>
         <Ionicons name="chevron-back" size={24} color={colors.text} />
       </Pressable>
       <T size={17} weight="700" numberOfLines={1} style={{ flex: 1, textAlign: 'center' }}>

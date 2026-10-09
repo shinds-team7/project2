@@ -43,7 +43,7 @@ export default function Income() {
         월 수입 (실수령액)
       </T>
       <View style={styles.amountBox}>
-        <TextInput value={amount ? won(amount) : ''} onChangeText={setRaw} keyboardType="number-pad" style={[styles.amount, noOutline]} />
+        <TextInput accessibilityLabel="월 수입" value={amount ? won(amount) : ''} onChangeText={setRaw} keyboardType="number-pad" inputMode="numeric" style={[styles.amount, noOutline]} />
         <T size={22} weight="700">
           원
         </T>
@@ -61,7 +61,7 @@ export default function Income() {
             const on = d === day;
             return (
               <View key={d} style={styles.cell}>
-                <Pressable onPress={() => setDay(d)} style={[styles.dayBtn, on && styles.dayOn]}>
+                <Pressable accessibilityRole="radio" accessibilityState={{ selected: on }} accessibilityLabel={`매월 ${d}일`} hitSlop={2} onPress={() => setDay(d)} style={[styles.dayBtn, on && styles.dayOn]}>
                   <T size={15} weight={on ? '800' : '500'} color={on ? '#fff' : colors.text}>
                     {d}
                   </T>
@@ -90,6 +90,6 @@ const styles = StyleSheet.create({
   cal: { backgroundColor: colors.bg, borderRadius: 18, padding: 14 },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
   cell: { width: `${100 / 7}%`, alignItems: 'center', paddingVertical: 3 },
-  dayBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
+  dayBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   dayOn: { backgroundColor: colors.brand },
 });

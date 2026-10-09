@@ -4,7 +4,8 @@ import { router, type Href } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Switch, View } from 'react-native';
 
-import { Button, Card, Chip, IconCircle, Screen, SectionTitle, Segment, Sheet, T } from '@/components/ui';
+import { useToast } from '@/components/Toast';
+import { Button, Card, Chip, ConfirmModal, IconCircle, Screen, SectionTitle, Segment, Sheet, T } from '@/components/ui';
 import { ACCOUNTS, USER } from '@/data/mock';
 import { useStore } from '@/store/AppStore';
 import { colors } from '@/theme';
@@ -14,6 +15,8 @@ import { won } from '@/utils/format';
 export default function My() {
   const { income, fixed, protectedList, summary, restartOnboarding, notify, setNotify, homeStyle, setHomeStyle } = useStore();
   const [timeOpen, setTimeOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const toast = useToast();
   const [hour, setHour] = useState(notify.hour);
   const [minute, setMinute] = useState(notify.minute);
   const timeLabel = (h: number, m: number) => `${h < 12 ? '오전' : '오후'} ${h % 12 || 12}:${String(m).padStart(2, '0')}`;
@@ -121,7 +124,7 @@ export default function My() {
       <Card>
         <SectionTitle title="푸시 알림" />
         <Toggle label="매일 정산 요약" value={notify.morning} onChange={(v) => setNotify({ ...notify, morning: v })} />
-        <Pressable
+        <Pressable accessibilityRole="button"
           disabled={!notify.morning}
           style={[styles.timeRow, !notify.morning && { opacity: 0.4 }]}
           onPress={() => {
@@ -144,22 +147,21 @@ export default function My() {
       </Card>
 
       <Card style={{ gap: 4, paddingVertical: 8 }}>
-        <Pressable
-          style={styles.menu}
-          onPress={() => {
-            restartOnboarding();
-            router.replace('/onboarding');
-          }}
-        >
+        <Pressable accessibilityRole="button" style={styles.menu} onPress={() => setResetOpen(true)}>
           <T size={15}>처음 설정 다시 하기 (온보딩)</T>
           <Ionicons name="chevron-forward" size={16} color={colors.textFaint} />
         </Pressable>
-        <Pressable style={styles.menu} onPress={() => router.push('/demo')}>
+        <Pressable accessibilityRole="button" style={styles.menu} onPress={() => router.push('/demo')}>
           <T size={15}>시연 메뉴 (결제·푸시 시뮬레이션)</T>
           <Ionicons name="chevron-forward" size={16} color={colors.textFaint} />
         </Pressable>
         {['공지사항', '고객센터', '로그아웃'].map((l) => (
-          <Pressable key={l} style={styles.menu}>
+          <Pressable
+            key={l}
+            accessibilityRole="button"
+            style={styles.menu}
+            onPress={() => toast(l === '로그아웃' ? '시연 버전에서는 로그아웃할 수 없어요' : `${l}은 정식 버전에서 열려요`)}
+          >
             <T size={15} color={l === '로그아웃' ? colors.textMuted : colors.text}>
               {l}
             </T>
@@ -167,7 +169,7 @@ export default function My() {
           </Pressable>
         ))}
       </Card>
-      <T size={12} color={colors.textFaint} style={{ textAlign: 'center' }}>
+      <T size={12} color={colors.textMuted} style={{ textAlign: 'center' }}>
         Flex-able 텅장관리 v0.3.0 (mock)
       </T>
 
@@ -197,13 +199,25 @@ export default function My() {
           }}
         />
       </Sheet>
+      <ConfirmModal
+        visible={resetOpen}
+        title="처음 설정을 다시 할까요?"
+        message="계좌 연결부터 수입·고정지출·보호 금액을 다시 입력해요. 지금 입력된 값은 새로 입력한 값으로 바뀌어요."
+        confirmLabel="다시 설정"
+        onCancel={() => setResetOpen(false)}
+        onConfirm={() => {
+          setResetOpen(false);
+          restartOnboarding();
+          router.replace('/onboarding');
+        }}
+      />
     </Screen>
   );
 }
 
 function Menu({ label, value, sub, href }: { label: string; value?: string; sub?: string; href: Href }) {
   return (
-    <Pressable style={[styles.row, { paddingVertical: 10 }]} onPress={() => router.push(href)}>
+    <Pressable accessibilityRole="button" style={[styles.row, { paddingVertical: 10 }]} onPress={() => router.push(href)}>
       <View style={{ flex: 1 }}>
         <T size={15} weight="600">
           {label}

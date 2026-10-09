@@ -34,7 +34,7 @@ export default function Account() {
           {BANKS.map((b) => {
             const on = picked.includes(b);
             return (
-              <Pressable key={b} onPress={() => setPicked(on ? picked.filter((x) => x !== b) : [...picked, b])} style={[styles.bank, on && styles.bankOn]}>
+              <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: on }} key={b} onPress={() => setPicked(on ? picked.filter((x) => x !== b) : [...picked, b])} style={[styles.bank, on && styles.bankOn]}>
                 <View style={[styles.bankIcon, { backgroundColor: b.startsWith('신한') ? '#0046FF' : '#D0D5DD' }]}>
                   <Ionicons name={b.includes('카드') ? 'card' : 'business'} size={16} color="#fff" />
                 </View>

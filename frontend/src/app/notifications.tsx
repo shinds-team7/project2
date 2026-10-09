@@ -52,7 +52,7 @@ export default function Notifications() {
       <Screen>
         <Card style={{ paddingVertical: 6, paddingHorizontal: 6 }}>
           {list.map((n, i) => (
-            <Pressable
+            <Pressable accessibilityRole="button"
               key={n.id}
               disabled={!n.href}
               onPress={() => n.href && router.push(n.href)}

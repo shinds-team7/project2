@@ -48,7 +48,7 @@ export default function Fixed() {
       }}
     >
       {list.map((f) => (
-        <Pressable key={f.id} onPress={() => setList(list.map((x) => (x.id === f.id ? { ...x, on: !x.on } : x)))} style={[styles.row, !f.on && { opacity: 0.45 }]}>
+        <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: f.on }} key={f.id} onPress={() => setList(list.map((x) => (x.id === f.id ? { ...x, on: !x.on } : x)))} style={[styles.row, !f.on && { opacity: 0.45 }]}>
           <View style={styles.day}>
             <T size={12} weight="700" color={colors.textSub}>
               {f.day}일
@@ -60,7 +60,7 @@ export default function Fixed() {
           <T size={15} weight="700">
             {won(f.amount)}원
           </T>
-          <Ionicons name={f.on ? 'checkmark-circle' : 'ellipse-outline'} size={22} color={f.on ? colors.brand : colors.textFaint} />
+          <Ionicons name={f.on ? 'checkmark-circle' : 'ellipse-outline'} size={22} color={f.on ? colors.brand : colors.placeholder} />
         </Pressable>
       ))}
 
@@ -68,18 +68,18 @@ export default function Fixed() {
         <T size={13} weight="600" color={colors.textSub}>
           직접 추가
         </T>
-        <TextInput value={name} onChangeText={setName} placeholder="항목 (예: 헬스장)" placeholderTextColor={colors.textFaint} style={[styles.input, noOutline]} />
+        <TextInput accessibilityLabel="고정지출 항목" value={name} onChangeText={setName} placeholder="항목 (예: 헬스장)" placeholderTextColor={colors.placeholder} style={[styles.input, noOutline]} />
         <View style={{ flexDirection: 'row', gap: 8 }}>
-          <TextInput value={day} onChangeText={setDay} placeholder="납부일" keyboardType="number-pad" placeholderTextColor={colors.textFaint} style={[styles.input, noOutline, { width: 72 }]} />
-          <TextInput
+          <TextInput accessibilityLabel="납부일" value={day} onChangeText={setDay} placeholder="납부일" keyboardType="number-pad" inputMode="numeric" placeholderTextColor={colors.placeholder} style={[styles.input, noOutline, { width: 72 }]} />
+          <TextInput accessibilityLabel="고정지출 금액"
             value={raw ? won(Number(raw.replace(/[^0-9]/g, '')) || 0) : ''}
             onChangeText={setRaw}
             placeholder="금액"
-            keyboardType="number-pad"
-            placeholderTextColor={colors.textFaint}
+            keyboardType="number-pad" inputMode="numeric"
+            placeholderTextColor={colors.placeholder}
             style={[styles.input, noOutline, { flex: 1, minWidth: 0, textAlign: 'right' }]}
           />
-          <Pressable onPress={add} style={styles.plus}>
+          <Pressable accessibilityRole="button" accessibilityLabel="고정지출 추가" onPress={add} style={styles.plus}>
             <Ionicons name="add" size={22} color="#fff" />
           </Pressable>
         </View>

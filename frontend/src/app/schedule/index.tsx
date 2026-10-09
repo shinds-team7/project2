@@ -31,7 +31,7 @@ export default function ScheduleList() {
 
   return (
     <View style={{ flex: 1 }}>
-      <SubHeader title="후보 거래 (예정 지출)" right={<Pressable onPress={() => router.push('/schedule/new')} hitSlop={8}><Ionicons name="add" size={26} color={colors.text} /></Pressable>} />
+      <SubHeader title="후보 거래 (예정 지출)" right={<Pressable accessibilityRole="button" accessibilityLabel="예정 지출 추가" onPress={() => router.push('/schedule/new')} hitSlop={8}><Ionicons name="add" size={26} color={colors.text} /></Pressable>} />
       <Screen>
         {toSettle.length > 0 && (
           <Card>

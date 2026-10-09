@@ -72,7 +72,7 @@ function Group({ title, items }: { title: string; items: Item[] }) {
       <SectionTitle title={title} />
       <View style={{ gap: 4 }}>
         {items.map((it) => (
-          <Pressable key={it.url} style={styles.row} onPress={() => router.push(it.href)}>
+          <Pressable accessibilityRole="button" key={it.url} style={styles.row} onPress={() => router.push(it.href)}>
             <View style={{ flex: 1 }}>
               <T size={15} weight="600">
                 {it.title}

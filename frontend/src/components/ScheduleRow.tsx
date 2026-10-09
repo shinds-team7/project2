@@ -4,9 +4,10 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import type { ScheduledSpend } from '@/store/budget';
 import { useStore } from '@/store/AppStore';
-import { colors } from '@/theme';
+import { colors, pressed as pressedFx, pressTransition } from '@/theme';
 import { fromKey, isSameDay } from '@/utils/date';
 import { DOW, won } from '@/utils/format';
+import { useToast } from './Toast';
 import { T } from './ui';
 
 /**
@@ -25,7 +26,8 @@ export function ScheduleRow({
   onPress?: () => void;
   onEdit?: () => void;
 }) {
-  const { removeScheduled } = useStore();
+  const { removeScheduled, restoreScheduled } = useStore();
+  const toast = useToast();
   const d = fromKey(item.date);
   const sourceLabel = item.source === 'calendar' ? '캘린더 · AI 예상' : item.source === 'ai' ? 'AI 예상' : '직접 입력';
 
@@ -58,7 +60,7 @@ export function ScheduleRow({
 
   if (onPress) {
     return (
-      <Pressable style={styles.box} onPress={onPress}>
+      <Pressable accessibilityRole="button" style={styles.box} onPress={onPress}>
         {body}
         <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
       </Pressable>
@@ -70,14 +72,26 @@ export function ScheduleRow({
       {body}
       <View style={styles.actions}>
         <Pressable
-          style={[styles.btn, styles.edit]}
+          accessibilityRole="button"
+          accessibilityLabel={`${item.title} 수정`}
+          hitSlop={4}
+          style={({ pressed }) => [styles.btn, styles.edit, pressTransition, pressed && pressedFx]}
           onPress={onEdit ?? (() => router.push({ pathname: '/schedule', params: { edit: item.id } }))}
         >
           <T size={13} weight="700" color={colors.brandDark}>
             수정
           </T>
         </Pressable>
-        <Pressable style={[styles.btn, styles.del]} onPress={() => removeScheduled(item.id)}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`${item.title} 삭제`}
+          hitSlop={4}
+          style={({ pressed }) => [styles.btn, styles.del, pressTransition, pressed && pressedFx]}
+          onPress={() => {
+            removeScheduled(item.id);
+            toast(`‘${item.title}’ 일정을 삭제했어요`, () => restoreScheduled(item));
+          }}
+        >
           <T size={13} weight="700" color={colors.textSub}>
             삭제
           </T>
@@ -105,7 +119,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   actions: { flexDirection: 'row', gap: 6 },
-  btn: { height: 34, paddingHorizontal: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  btn: { height: 36, paddingHorizontal: 12, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
   edit: { backgroundColor: colors.brandSoft },
   del: { backgroundColor: '#fff', borderWidth: 1, borderColor: colors.line },
 });

@@ -7,6 +7,7 @@ import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react
 import { parsePlan, type PlanDraft } from '@/ai/parsePlan';
 import { ScheduleEditSheet } from '@/components/ScheduleEditSheet';
 import { goBack, SubHeader } from '@/components/SubHeader';
+import { useToast } from '@/components/Toast';
 import { Badge, Button, Card, Chip, Screen, Segment, Sheet, T } from '@/components/ui';
 import { CALENDAR_EVENTS } from '@/data/mock';
 import { useStore } from '@/store/AppStore';
@@ -20,7 +21,8 @@ type Result = { id: string; draft: PlanDraft; before: number };
 
 export default function NewSchedule() {
   const store = useStore();
-  const { today, memory, summary, addScheduled, removeScheduled, scheduled } = store;
+  const { today, memory, summary, addScheduled, removeScheduled, restoreScheduled, scheduled } = store;
+  const toast = useToast();
   const [mode, setMode] = useState<'ai' | 'manual'>('ai');
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
@@ -80,11 +82,11 @@ export default function NewSchedule() {
               <T size={13} color={colors.textMuted} style={{ marginTop: 4, lineHeight: 19 }}>
                 편하게 적으면 AI가 날짜와 금액을 정리해서 바로 예산에 넣어둘게요.{'\n'}금액은 내 지난 6개월 소비를 참고해요.
               </T>
-              <TextInput
+              <TextInput accessibilityLabel="예정된 소비를 말로 적기"
                 value={text}
                 onChangeText={setText}
                 placeholder="예) 다음주 금요일 아카데미 회식"
-                placeholderTextColor={colors.textFaint}
+                placeholderTextColor={colors.placeholder}
                 multiline
                 style={[styles.textarea, noOutline]}
               />
@@ -136,7 +138,11 @@ export default function NewSchedule() {
             result={r}
             after={summary.dailyLimit}
             onEdit={() => setEditId(r.id)}
-            onCancel={() => removeScheduled(r.id)}
+            onCancel={() => {
+              const item = scheduled.find((x) => x.id === r.id);
+              removeScheduled(r.id);
+              if (item) toast(`‘${item.title}’ 등록을 취소했어요`, () => restoreScheduled(item));
+            }}
           />
         ))}
 
@@ -152,6 +158,7 @@ export default function NewSchedule() {
             const already = scheduled.some((s) => s.title === ev.title);
             return (
               <Pressable
+                accessibilityRole="checkbox" accessibilityState={{ checked: on }}
                 key={ev.id}
                 disabled={already}
                 onPress={() => setPicked(on ? picked.filter((p) => p !== ev.id) : [...picked, ev.id])}
@@ -167,7 +174,7 @@ export default function NewSchedule() {
                     {already ? ' · 이미 등록됨' : ''}
                   </T>
                 </View>
-                <Ionicons name={on ? 'checkbox' : 'square-outline'} size={22} color={on ? colors.brand : colors.textFaint} />
+                <Ionicons name={on ? 'checkbox' : 'square-outline'} size={22} color={on ? colors.brand : colors.placeholder} />
               </Pressable>
             );
           })}
@@ -262,7 +269,7 @@ function ResultCard({ result, after, onEdit, onCancel }: { result: Result; after
       </T>
 
       {large && (
-        <Pressable
+        <Pressable accessibilityRole="button"
           style={styles.large}
           onPress={() => {
             onCancel();
@@ -278,7 +285,7 @@ function ResultCard({ result, after, onEdit, onCancel }: { result: Result; after
       )}
 
       <View style={{ flexDirection: 'row', gap: 8 }}>
-        <Button label="취소" variant="soft" style={{ flex: 1, height: 46 }} onPress={onCancel} />
+        <Button label="등록 취소" variant="ghost" style={{ flex: 1, height: 46 }} onPress={onCancel} />
         <Button label="수정" variant="soft" style={{ flex: 1, height: 46 }} onPress={onEdit} />
       </View>
     </Card>
@@ -299,7 +306,7 @@ function ManualForm() {
       <T size={13} weight="600" color={colors.textSub} style={styles.label}>
         무엇을
       </T>
-      <TextInput value={title} onChangeText={setTitle} placeholder="예) 친구 집들이" placeholderTextColor={colors.textFaint} style={[styles.input, noOutline]} />
+      <TextInput accessibilityLabel="무엇을" value={title} onChangeText={setTitle} placeholder="예) 친구 집들이" placeholderTextColor={colors.placeholder} style={[styles.input, noOutline]} />
       <T size={13} weight="600" color={colors.textSub} style={styles.label}>
         언제
       </T>
@@ -307,7 +314,7 @@ function ManualForm() {
         {days.map((d, i) => {
           const on = i === day;
           return (
-            <Pressable key={i} onPress={() => setDay(i)} style={[styles.day, on && styles.dayOn]}>
+            <Pressable accessibilityRole="radio" accessibilityState={{ selected: on }} key={i} onPress={() => setDay(i)} style={[styles.day, on && styles.dayOn]}>
               <T size={11} color={on ? '#fff' : colors.textMuted}>
                 {i === 0 ? '오늘' : DOW[d.getDay()]}
               </T>
@@ -322,12 +329,12 @@ function ManualForm() {
         예상 금액 (본인 부담)
       </T>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <TextInput
+        <TextInput accessibilityLabel="예상 금액"
           value={amount ? won(amount) : ''}
           onChangeText={setRaw}
-          keyboardType="number-pad"
+          keyboardType="number-pad" inputMode="numeric"
           placeholder="0"
-          placeholderTextColor={colors.textFaint}
+          placeholderTextColor={colors.placeholder}
           style={[styles.input, noOutline, { flex: 1, minWidth: 0, textAlign: 'right' }]}
         />
         <T size={16} weight="600">

@@ -57,6 +57,8 @@ type Store = {
   addScheduled: (s: Omit<ScheduledSpend, 'id' | 'status'>) => string;
   updateScheduled: (id: string, patch: Partial<ScheduledSpend>) => void;
   removeScheduled: (id: string) => void;
+  /** 삭제 되돌리기 — 같은 id로 복원 */
+  restoreScheduled: (s: ScheduledSpend) => void;
   settleScheduled: (id: string, actual: number) => { memoryLabel?: string; before?: number; after?: number };
 
   plans: LargePlan[];
@@ -67,6 +69,7 @@ type Store = {
   updateMemory: (id: string, amount: number) => void;
   insights: Insight[];
   removeInsight: (id: string) => void;
+  restoreInsight: (i: Insight) => void;
 
   budgetInput: BudgetInput;
   summary: BudgetSummary;
@@ -229,6 +232,8 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       updateScheduled: (id, patch) =>
         setScheduled((prev) => prev.map((s) => (s.id === id ? { ...s, ...patch } : s)).sort(sortByDate)),
       removeScheduled: (id) => setScheduled((prev) => prev.filter((s) => s.id !== id)),
+      restoreScheduled: (item) =>
+        setScheduled((prev) => (prev.some((x) => x.id === item.id) ? prev : [...prev, item].sort(sortByDate))),
       settleScheduled: (id, actual) => {
         const target = scheduled.find((s) => s.id === id);
         setScheduled((prev) => prev.map((s) => (s.id === id ? { ...s, status: 'settled', actual } : s)));
@@ -248,6 +253,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
         setMemory((prev) => prev.map((m) => (m.id === id ? { ...m, amount, editedByUser: true } : m))),
       insights,
       removeInsight: (id) => setInsights((prev) => prev.filter((i) => i.id !== id)),
+      restoreInsight: (item) => setInsights((prev) => (prev.some((x) => x.id === item.id) ? prev : [...prev, item])),
       budgetInput,
       summary: computeBudget(budgetInput),
     };
