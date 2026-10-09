@@ -1,10 +1,7 @@
 /**
  * 앱 전역 상태 (Mock, 메모리 저장 — 새로고침하면 초기화).
- * 백엔드 연동 시 각 액션을 API 호출로 교체하면 된다.
- *   - transactions → GET /api/transactions (오픈뱅킹 연동), PATCH /api/transactions/:id (확인)
- *   - scheduled    → /api/schedules (예정 지출)
- *   - plans        → /api/large-expenses (고액 지출 계획)
- *   - memory       → AI 서버 /ai/memory
+ * SERVICE_MIGRATION: 실제 앱에서는 UI가 API를 직접 호출하지 않고 로컬 DB와 outbox를 먼저 갱신한다.
+ * 교체 경계와 유지할 불변식은 docs/SERVICE_MIGRATION.md를 따른다.
  */
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import { Platform } from 'react-native';
@@ -59,7 +56,7 @@ type Store = {
   removeScheduled: (id: string) => void;
   /** 삭제 되돌리기 — 같은 id로 복원 */
   restoreScheduled: (s: ScheduledSpend) => void;
-  settleScheduled: (id: string, actual: number) => { memoryLabel?: string; before?: number; after?: number };
+  settleScheduled: (id: string, actual: number, transactionIds?: string[]) => { memoryLabel?: string; before?: number; after?: number };
 
   plans: LargePlan[];
   addPlan: (p: Omit<LargePlan, 'id'>) => void;
@@ -234,9 +231,20 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       removeScheduled: (id) => setScheduled((prev) => prev.filter((s) => s.id !== id)),
       restoreScheduled: (item) =>
         setScheduled((prev) => (prev.some((x) => x.id === item.id) ? prev : [...prev, item].sort(sortByDate))),
-      settleScheduled: (id, actual) => {
+      settleScheduled: (id, actual, transactionIds = []) => {
         const target = scheduled.find((s) => s.id === id);
+        if (!target || target.status === 'settled') return {};
         setScheduled((prev) => prev.map((s) => (s.id === id ? { ...s, status: 'settled', actual } : s)));
+        if (transactionIds.length) {
+          const selectedIds = new Set(transactionIds);
+          setTransactions((prev) =>
+            prev.map((transaction) =>
+              selectedIds.has(transaction.id) && (!transaction.planId || transaction.planId === id)
+                ? { ...transaction, planId: id }
+                : transaction,
+            ),
+          );
+        }
         // 단일 항목 일정이면 AI 메모리 평균을 실제 금액으로 갱신 (학습)
         const memId = target?.items?.length === 1 ? target.items[0].memoryId : undefined;
         const mem = memory.find((m) => m.id === memId);

@@ -37,6 +37,7 @@ export default function Plan() {
   useEffect(() => {
     if (amount < 10000) {
       setAnalyzed(0);
+      setLoading(false);
       return;
     }
     setLoading(true);
